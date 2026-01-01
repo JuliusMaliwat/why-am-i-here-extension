@@ -1,2 +1,2 @@
 # why-am-i-here-extension
-urn doom scrolling into intention
+turn doom scrolling into intention
