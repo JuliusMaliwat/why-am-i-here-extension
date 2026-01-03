@@ -1,6 +1,5 @@
 import { matchesTargetDomain, normalizeHostname } from "../shared/domains";
 import { getConfig } from "../shared/storage";
-import { showNote } from "./note";
 import { getActiveIntentionFromBackground, sendMessage } from "./runtime";
 
 const OVERLAY_ID = "waih-overlay-root";
@@ -8,12 +7,19 @@ const ACTIVE_INTENTION_KEY = "waih_active_intention";
 const SCROLL_LOCK_CLASS = "waih-scroll-lock";
 const SCROLL_LOCK_ATTR = "data-waih-scroll-lock";
 const SCROLL_TOP_ATTR = "data-waih-scroll-top";
+const PILL_POSITION_KEY = "waih_pill_position";
 let activeOverlayInput: HTMLInputElement | null = null;
 
 type ActiveIntention = {
   domain: string;
   intention: string;
   createdAt: number;
+};
+
+type PillPosition = {
+  x: number;
+  y: number;
+  mode: "center" | "free";
 };
 
 function getActiveIntention(domain: string): ActiveIntention | null {
@@ -30,6 +36,32 @@ function getActiveIntention(domain: string): ActiveIntention | null {
 
 function setActiveIntention(intention: ActiveIntention): void {
   sessionStorage.setItem(ACTIVE_INTENTION_KEY, JSON.stringify(intention));
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getDefaultPillPosition(): PillPosition {
+  return {
+    x: window.innerWidth / 2,
+    y: 64,
+    mode: "center"
+  };
+}
+
+function loadPillPosition(): PillPosition | null {
+  const raw = sessionStorage.getItem(PILL_POSITION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as PillPosition;
+  } catch {
+    return null;
+  }
+}
+
+function savePillPosition(position: PillPosition): void {
+  sessionStorage.setItem(PILL_POSITION_KEY, JSON.stringify(position));
 }
 
 function lockScroll(): void {
@@ -111,21 +143,71 @@ function preventKeyScroll(event: KeyboardEvent): void {
   }
 }
 
-async function shouldShowOverlay(): Promise<boolean> {
-  const hostname = normalizeHostname(window.location.hostname);
-  if (!hostname) return false;
-
-  const config = await getConfig();
-  if (!matchesTargetDomain(hostname, config.targetDomains || [])) {
-    return false;
+function applyPillPosition(pill: HTMLDivElement, position: PillPosition): void {
+  pill.style.left = `${position.x}px`;
+  pill.style.top = `${position.y}px`;
+  if (position.mode === "center") {
+    pill.classList.remove("is-free");
+  } else {
+    pill.classList.add("is-free");
   }
-
-  const backgroundIntention = await getActiveIntentionFromBackground(hostname);
-  const existing = backgroundIntention ?? getActiveIntention(hostname);
-  return !existing;
 }
 
-function createOverlay(): HTMLDivElement {
+function enableDragging(pill: HTMLDivElement, position: PillPosition): void {
+  let startX = 0;
+  let startY = 0;
+  let startLeft = 0;
+  let startTop = 0;
+
+  const onPointerMove = (event: PointerEvent): void => {
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+    const rect = pill.getBoundingClientRect();
+    const nextLeft = clamp(
+      startLeft + deltaX,
+      16,
+      window.innerWidth - rect.width - 16
+    );
+    const nextTop = clamp(
+      startTop + deltaY,
+      16,
+      window.innerHeight - rect.height - 16
+    );
+
+    position.x = nextLeft;
+    position.y = nextTop;
+    position.mode = "free";
+    applyPillPosition(pill, position);
+  };
+
+  const onPointerUp = (event: PointerEvent): void => {
+    pill.releasePointerCapture(event.pointerId);
+    pill.style.cursor = "grab";
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    savePillPosition(position);
+  };
+
+  pill.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    const rect = pill.getBoundingClientRect();
+    startX = event.clientX;
+    startY = event.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    pill.style.cursor = "grabbing";
+    pill.setPointerCapture(event.pointerId);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  });
+}
+
+type OverlayMode = "gate" | "pill";
+
+function createOverlay(
+  mode: OverlayMode,
+  intentionText?: string
+): HTMLDivElement {
   const root = document.createElement("div");
   root.id = OVERLAY_ID;
   const shadow = root.attachShadow({ mode: "open" });
@@ -142,21 +224,33 @@ function createOverlay(): HTMLDivElement {
       justify-content: center;
       background: rgba(18, 20, 22, 0.72);
       backdrop-filter: blur(10px);
-      z-index: 2147483647;
+      z-index: 2147483646;
       font-family: "Avenir Next", "Futura", "Segoe UI", sans-serif;
       color: #f4f5f7;
       padding-top: 72px;
     }
-    .card {
-      background: rgba(28, 32, 36, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .pill {
+      position: fixed;
+      z-index: 2147483647;
+      left: 50%;
+      top: 64px;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      color: #171a1d;
+      border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 999px;
-      padding: 10px 16px;
-      width: min(340px, 88vw);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      padding: 12px 18px;
+      min-width: 220px;
+      max-width: 420px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
       display: flex;
       align-items: center;
       gap: 10px;
+      cursor: grab;
+      user-select: none;
+    }
+    .pill.is-free {
+      transform: none;
     }
     form {
       display: flex;
@@ -168,16 +262,16 @@ function createOverlay(): HTMLDivElement {
       flex: 1;
       background: transparent;
       border: none;
-      color: #f4f5f7;
-      font-size: 1.05rem;
+      color: inherit;
+      font-size: 1.1rem;
       outline: none;
     }
     input::placeholder {
-      color: #c8cdd2;
+      color: rgba(23, 26, 29, 0.45);
     }
     button {
       background: transparent;
-      color: #c8cdd2;
+      color: rgba(23, 26, 29, 0.6);
       border: none;
       padding: 0;
       font-size: 0.8rem;
@@ -189,13 +283,13 @@ function createOverlay(): HTMLDivElement {
       pointer-events: none;
       transition: opacity 0.15s ease;
     }
-    .card.is-typing button {
+    .pill.is-typing button {
       opacity: 1;
       pointer-events: auto;
     }
     .error {
       position: absolute;
-      top: calc(100% + 8px);
+      top: calc(100% + 10px);
       left: 50%;
       transform: translateX(-50%);
       color: #e7b3b3;
@@ -203,13 +297,21 @@ function createOverlay(): HTMLDivElement {
       margin: 0;
       min-height: 1.1em;
     }
+    .sizer {
+      position: absolute;
+      visibility: hidden;
+      white-space: pre;
+      font-size: 1.1rem;
+      font-family: "Avenir Next", "Futura", "Segoe UI", sans-serif;
+      padding: 0;
+    }
   `;
 
   const overlay = document.createElement("div");
   overlay.className = "overlay";
 
-  const card = document.createElement("div");
-  card.className = "card";
+  const pill = document.createElement("div");
+  pill.className = "pill";
 
   const form = document.createElement("form");
   const input = document.createElement("input");
@@ -219,67 +321,105 @@ function createOverlay(): HTMLDivElement {
   const error = document.createElement("p");
   error.className = "error";
 
+  const sizer = document.createElement("span");
+  sizer.className = "sizer";
+
   const button = document.createElement("button");
   button.type = "submit";
   button.textContent = "Enter";
 
+  const updateSizing = (): void => {
+    const value = input.value.trim() || input.placeholder;
+    sizer.textContent = value;
+    const width = sizer.getBoundingClientRect().width;
+    const padded = clamp(width + 40, 180, 380);
+    input.style.width = `${padded}px`;
+  };
+
   const updateTypingState = (): void => {
     if (input.value.trim().length > 0) {
-      card.classList.add("is-typing");
+      pill.classList.add("is-typing");
     } else {
-      card.classList.remove("is-typing");
+      pill.classList.remove("is-typing");
     }
   };
 
-  input.addEventListener("input", updateTypingState);
-  activeOverlayInput = input;
-
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    error.textContent = "";
-
-    const intention = input.value.trim();
-    if (!intention) {
-      error.textContent = "Add a short intention to continue.";
-      input.focus();
+  if (mode === "gate") {
+    input.addEventListener("input", () => {
       updateTypingState();
-      return;
-    }
-
-    const hostname = normalizeHostname(window.location.hostname);
-    if (!hostname) {
-      error.textContent = "This page does not have a valid domain.";
-      return;
-    }
-
-    const timestamp = Date.now();
-    const activeIntention = {
-      domain: hostname,
-      intention,
-      createdAt: timestamp
-    };
-
-    setActiveIntention(activeIntention);
-
-    void sendMessage({
-      type: "intention_submitted",
-      payload: { domain: hostname, intention, timestamp }
+      updateSizing();
     });
+    activeOverlayInput = input;
 
-    showNote({
-      ...activeIntention,
-      tabId: -1
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      error.textContent = "";
+
+      const intention = input.value.trim();
+      if (!intention) {
+        error.textContent = "Add a short intention to continue.";
+        input.focus();
+        updateTypingState();
+        return;
+      }
+
+      const hostname = normalizeHostname(window.location.hostname);
+      if (!hostname) {
+        error.textContent = "This page does not have a valid domain.";
+        return;
+      }
+
+      const timestamp = Date.now();
+      const activeIntention = {
+        domain: hostname,
+        intention,
+        createdAt: timestamp
+      };
+
+      setActiveIntention(activeIntention);
+
+      void sendMessage({
+        type: "intention_submitted",
+        payload: { domain: hostname, intention, timestamp }
+      });
+
+      overlay.remove();
+      error.remove();
+      input.value = intention;
+      input.readOnly = true;
+      input.blur();
+      button.remove();
+      pill.classList.remove("is-typing");
+      updateSizing();
+
+      unlockScroll();
+      activeOverlayInput = null;
     });
+  } else {
+    input.value = intentionText ?? "";
+    input.readOnly = true;
+    input.setAttribute("aria-readonly", "true");
+    button.remove();
+    error.remove();
+    pill.classList.remove("is-typing");
+  }
 
-    root.remove();
-    activeOverlayInput = null;
-    unlockScroll();
-  });
+  updateSizing();
 
-  form.append(input, button);
-  card.append(form, error);
-  overlay.append(card);
-  shadow.append(style, overlay);
+  if (mode === "gate") {
+    form.append(input, button);
+    pill.append(form, error);
+    shadow.append(style, sizer, overlay, pill);
+  } else {
+    form.append(input);
+    pill.append(form);
+    shadow.append(style, sizer, pill);
+  }
+
+  const position = loadPillPosition() ?? getDefaultPillPosition();
+  applyPillPosition(pill, position);
+  enableDragging(pill, position);
+  savePillPosition(position);
 
   return root;
 }
@@ -288,18 +428,28 @@ export async function mountOverlay(): Promise<void> {
   const existing = document.getElementById(OVERLAY_ID);
   if (existing) return;
 
-  if (!(await shouldShowOverlay())) {
+  const hostname = normalizeHostname(window.location.hostname);
+  if (!hostname) return;
+
+  const config = await getConfig();
+  if (!matchesTargetDomain(hostname, config.targetDomains || [])) {
+    return;
+  }
+
+  const backgroundIntention = await getActiveIntentionFromBackground(hostname);
+  const existingIntention = backgroundIntention ?? getActiveIntention(hostname);
+  if (existingIntention) {
+    document.documentElement.appendChild(
+      createOverlay("pill", existingIntention.intention)
+    );
     return;
   }
 
   lockScroll();
-  const hostname = normalizeHostname(window.location.hostname);
-  if (hostname) {
-    void sendMessage({
-      type: "overlay_shown",
-      payload: { domain: hostname, timestamp: Date.now() }
-    });
-  }
+  void sendMessage({
+    type: "overlay_shown",
+    payload: { domain: hostname, timestamp: Date.now() }
+  });
 
-  document.documentElement.appendChild(createOverlay());
+  document.documentElement.appendChild(createOverlay("gate"));
 }

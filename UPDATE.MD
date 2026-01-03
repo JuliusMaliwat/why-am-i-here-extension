@@ -27,8 +27,8 @@ Only the content-layer UI and behavior are affected:
    - Prevent page scroll on `body`/`html` while the overlay is active.
    - Restore scrolling immediately after submit.
 
-5) **Floating note starts at overlay position + draggable**
-   - On submit, place the note near the overlay’s last position (top center).
+5) **Floating pill remains after submit + draggable**
+   - On submit, keep the pill near the overlay’s last position (top center).
    - Allow drag-and-drop to reposition (mouse + touch).
    - Persist position in `sessionStorage` (optional in MVP, if low effort).
 
@@ -36,4 +36,3 @@ Only the content-layer UI and behavior are affected:
 - Overlay is top-aligned and blocks scroll.
 - Input is the only visible UI and shows “↵ Enter” on typing.
 - Note appears after submit at top, then draggable by the user.
-

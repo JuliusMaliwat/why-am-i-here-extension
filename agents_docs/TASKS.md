@@ -41,15 +41,15 @@
 
 ### 3. Floating Intention Note
 
-* [x] **Floating note appears after submit**
+* [x] **Floating pill remains after submit**
 
-  * Output: small persistent note displays intention
-  * DoD: visible, readable, unobtrusive
+  * Output: floating pill displays the submitted intention
+  * DoD: visible, readable, unobtrusive, draggable
 
 * [ ] **Persistence across navigation**
 
-  * Output: note remains on same domain navigation (basic SPA support)
-  * DoD: refresh rehydrates; typical in-site navigation keeps note
+  * Output: pill remains on same domain navigation (basic SPA support)
+  * DoD: refresh rehydrates; typical in-site navigation keeps pill
 
 ### 4. Storage + Events
 

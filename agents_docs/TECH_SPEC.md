@@ -7,7 +7,7 @@
 A browser extension (Chrome + Edge) that:
 
 * On **target domains**, shows a **blocking overlay** requiring an **intention**.
-* After submission, renders a **floating intention note** on the page.
+* After submission, renders a **floating intention pill** on the page.
 * Records minimal **events** for future insights.
 
 ## 2) Main Components
@@ -140,11 +140,11 @@ Each event record:
 
    * Persist active intention state.
    * Record `intention_submitted`.
-   * Hide overlay, show floating note.
+   * Hide overlay, show floating pill.
 
 ### Flow 2 — Navigation Within Same Domain
 
-* Content layer ensures floating note remains present.
+* Content layer ensures floating pill remains present.
 * If page reload resets UI, content script rehydrates from active intention state.
 
 ### Flow 3 — User Leaves Without Submitting
@@ -181,7 +181,7 @@ Keep the repo minimal and MV3-friendly. Create folders only as needed.
 
 * `src/` - source code root
 * `src/background/` - MV3 service worker
-* `src/content/` - overlay + floating note UI
+* `src/content/` - overlay + floating pill UI
 * `src/options/` - options UI (domains, settings)
 * `src/shared/` - types, storage, messaging, utils
 * `public/` - `manifest.json`, icons, static assets
