@@ -64,61 +64,60 @@ function createOverlay(): HTMLDivElement {
       padding-top: 72px;
     }
     .card {
-      background: #1c2024;
+      background: rgba(28, 32, 36, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 18px;
-      padding: 28px;
-      width: min(520px, 92vw);
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+      border-radius: 999px;
+      padding: 10px 16px;
+      width: min(340px, 88vw);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
       display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .title {
-      font-size: 1.35rem;
-      margin: 0;
-    }
-    .subtitle {
-      color: #b9c0c8;
-      margin: 0;
-      font-size: 0.95rem;
-      line-height: 1.4;
+      align-items: center;
+      gap: 10px;
     }
     form {
       display: flex;
-      flex-direction: column;
+      flex: 1;
+      align-items: center;
       gap: 10px;
-      margin-top: 6px;
     }
     input {
-      background: #131619;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 12px 14px;
+      flex: 1;
+      background: transparent;
+      border: none;
       color: #f4f5f7;
-      font-size: 1rem;
+      font-size: 1.05rem;
       outline: none;
     }
-    input:focus {
-      border-color: rgba(205, 179, 138, 0.7);
-      box-shadow: 0 0 0 2px rgba(205, 179, 138, 0.2);
+    input::placeholder {
+      color: #c8cdd2;
     }
     button {
-      align-self: flex-end;
-      background: #e7c595;
-      color: #101213;
+      background: transparent;
+      color: #c8cdd2;
       border: none;
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-size: 0.95rem;
+      padding: 0;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+    .card.is-typing button {
+      opacity: 1;
+      pointer-events: auto;
     }
     .error {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
       color: #e7b3b3;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       margin: 0;
-      min-height: 1.2em;
+      min-height: 1.1em;
     }
   `;
 
@@ -128,26 +127,27 @@ function createOverlay(): HTMLDivElement {
   const card = document.createElement("div");
   card.className = "card";
 
-  const title = document.createElement("h1");
-  title.className = "title";
-  title.textContent = "Why am I here?";
-
-  const subtitle = document.createElement("p");
-  subtitle.className = "subtitle";
-  subtitle.textContent =
-    "Write a short intention to keep this visit purposeful.";
-
   const form = document.createElement("form");
   const input = document.createElement("input");
   input.type = "text";
-  input.placeholder = "Example: watch one tutorial";
+  input.placeholder = "Why am I here?";
 
   const error = document.createElement("p");
   error.className = "error";
 
   const button = document.createElement("button");
   button.type = "submit";
-  button.textContent = "Continue";
+  button.textContent = "↵ Enter";
+
+  const updateTypingState = (): void => {
+    if (input.value.trim().length > 0) {
+      card.classList.add("is-typing");
+    } else {
+      card.classList.remove("is-typing");
+    }
+  };
+
+  input.addEventListener("input", updateTypingState);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -157,6 +157,7 @@ function createOverlay(): HTMLDivElement {
     if (!intention) {
       error.textContent = "Add a short intention to continue.";
       input.focus();
+      updateTypingState();
       return;
     }
 
@@ -188,8 +189,8 @@ function createOverlay(): HTMLDivElement {
     root.remove();
   });
 
-  form.append(input, error, button);
-  card.append(title, subtitle, form);
+  form.append(input, button);
+  card.append(form, error);
   overlay.append(card);
   shadow.append(style, overlay);
 
