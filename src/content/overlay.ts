@@ -54,13 +54,14 @@ function createOverlay(): HTMLDivElement {
       position: fixed;
       inset: 0;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       background: rgba(18, 20, 22, 0.72);
       backdrop-filter: blur(10px);
       z-index: 2147483647;
       font-family: "Avenir Next", "Futura", "Segoe UI", sans-serif;
       color: #f4f5f7;
+      padding-top: 72px;
     }
     .card {
       background: #1c2024;
