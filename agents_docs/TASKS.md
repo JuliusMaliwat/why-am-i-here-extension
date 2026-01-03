@@ -29,7 +29,7 @@
 
 ### 2. Gating Overlay
 
-* [ ] **Overlay shows on target domains**
+* [x] **Overlay shows on target domains**
 
   * Output: overlay blocks page until intention submitted
   * DoD: no overlay on non-target domains; no double overlay
