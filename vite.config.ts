@@ -7,7 +7,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        options: resolve(__dirname, "options.html")
+        options: resolve(__dirname, "options.html"),
+        content: resolve(__dirname, "src/content/index.ts"),
+        background: resolve(__dirname, "src/background/index.ts")
       }
     },
     emptyOutDir: true

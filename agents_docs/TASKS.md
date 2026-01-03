@@ -29,12 +29,12 @@
 
 ### 2. Gating Overlay
 
-* [ ] **Overlay shows on target domains**
+* [x] **Overlay shows on target domains**
 
   * Output: overlay blocks page until intention submitted
   * DoD: no overlay on non-target domains; no double overlay
 
-* [ ] **Intention validation + submit flow**
+* [x] **Intention validation + submit flow**
 
   * Output: cannot proceed with empty intention
   * DoD: submit closes overlay and continues browsing
@@ -53,17 +53,17 @@
 
 ### 4. Storage + Events
 
-* [ ] **Config store**
+* [x] **Config store**
 
   * Output: persist `target_domains`
   * DoD: settings survive browser restart
 
-* [ ] **Usage event log**
+* [x] **Usage event log**
 
   * Output: record `overlay_shown`, `intention_submitted`
   * DoD: includes domain + timestamp (+ intention text for submit)
 
-* [ ] **Active intention state (per-tab)**
+* [x] **Active intention state (per-tab)**
 
   * Output: store/retrieve current intention per tab
   * DoD: refresh restores state; new tab triggers new overlay
