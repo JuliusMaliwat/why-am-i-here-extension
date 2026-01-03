@@ -8,8 +8,8 @@
 
 ## Milestone 0 — Repo Baseline
 
-* [ ] Add docs to repo: `README.md`, `docs/PRD.md`, `docs/REQUIREMENTS.md`, `docs/TECH_SPEC.md`, `docs/DECISIONS.md`, `docs/TASKS.md`
-* [ ] Define minimal quality bar in `CONTRIBUTING.md` (next step)
+* [x] Add docs to repo: `README.md`, `agents_docs/PRD.md`, `agents_docs/REQUIREMENTS.md`, `agents_docs/TECH_SPEC.md`, `agents_docs/DECISIONS.md`, `agents_docs/TASKS.md`
+* [x] Define minimal quality bar in `CONTRIBUTING.md`
 
 ---
 
@@ -17,12 +17,12 @@
 
 ### 1. Settings: Target Domains
 
-* [ ] **Target domain list UI**
+* [x] **Target domain list UI**
 
   * Output: user can add/remove/edit domains
   * DoD: domains persist; invalid entries handled gently
 
-* [ ] **Domain normalization + matching rules**
+* [x] **Domain normalization + matching rules**
 
   * Output: consistent matching for exact + subdomains
   * DoD: matches `youtube.com` → `www.youtube.com`, doesn’t match unrelated domains
