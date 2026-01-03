@@ -81,6 +81,18 @@ This is for user self-reflection (not for advertising or external analytics).
 
 ---
 
+## Development (MVP)
+
+### Build and load the extension
+1. `npm install`
+2. `npm run build`
+3. Load `dist/` as an unpacked extension in Chrome or Edge.
+
+### Options page
+The options UI is bundled to `dist/options.html`.
+
+---
+
 ## Differentiator Feature: Time-boxed intention (v1+)
 A key differentiator versus similar tools is the ability to attach a **duration** to an intention.
 
