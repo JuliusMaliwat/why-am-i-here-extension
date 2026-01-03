@@ -1,4 +1,5 @@
 import { matchesTargetDomain, normalizeHostname } from "../shared/domains";
+import type { RuntimeMessage, RuntimeResponse } from "../shared/messaging";
 import { getConfig } from "../shared/storage";
 
 const OVERLAY_ID = "waih-overlay-root";
@@ -26,6 +27,38 @@ function setActiveIntention(intention: ActiveIntention): void {
   sessionStorage.setItem(ACTIVE_INTENTION_KEY, JSON.stringify(intention));
 }
 
+function sendMessage(
+  message: RuntimeMessage
+): Promise<RuntimeResponse | null> {
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(message, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve(null);
+        return;
+      }
+      resolve(response as RuntimeResponse);
+    });
+  });
+}
+
+async function getBackgroundIntention(
+  domain: string
+): Promise<ActiveIntention | null> {
+  const response = await sendMessage({ type: "get_active_intention" });
+  const active = response?.activeIntention ?? null;
+  if (!active) return null;
+  if (active.domain !== domain) return null;
+  return {
+    domain: active.domain,
+    intention: active.intention,
+    createdAt: active.createdAt
+  };
+}
+
 async function shouldShowOverlay(): Promise<boolean> {
   const hostname = normalizeHostname(window.location.hostname);
   if (!hostname) return false;
@@ -35,7 +68,9 @@ async function shouldShowOverlay(): Promise<boolean> {
     return false;
   }
 
-  const existing = getActiveIntention(hostname);
+  const existing =
+    (await getBackgroundIntention(hostname)) ??
+    getActiveIntention(hostname);
   return !existing;
 }
 
@@ -162,10 +197,16 @@ function createOverlay(): HTMLDivElement {
       return;
     }
 
+    const timestamp = Date.now();
     setActiveIntention({
       domain: hostname,
       intention,
-      createdAt: Date.now()
+      createdAt: timestamp
+    });
+
+    void sendMessage({
+      type: "intention_submitted",
+      payload: { domain: hostname, intention, timestamp }
     });
 
     root.remove();
@@ -185,6 +226,14 @@ export async function mountOverlay(): Promise<void> {
 
   if (!(await shouldShowOverlay())) {
     return;
+  }
+
+  const hostname = normalizeHostname(window.location.hostname);
+  if (hostname) {
+    void sendMessage({
+      type: "overlay_shown",
+      payload: { domain: hostname, timestamp: Date.now() }
+    });
   }
 
   document.documentElement.appendChild(createOverlay());
