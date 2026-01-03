@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "why am i here",
+  "version": "0.1.0",
+  "description": "Turn doom scrolling into intention.",
+  "options_page": "options.html",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "why am i here"
+  }
+}
