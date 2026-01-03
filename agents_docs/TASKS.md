@@ -41,7 +41,7 @@
 
 ### 3. Floating Intention Note
 
-* [ ] **Floating note appears after submit**
+* [x] **Floating note appears after submit**
 
   * Output: small persistent note displays intention
   * DoD: visible, readable, unobtrusive

@@ -1,6 +1,7 @@
 import { matchesTargetDomain, normalizeHostname } from "../shared/domains";
-import type { RuntimeMessage, RuntimeResponse } from "../shared/messaging";
 import { getConfig } from "../shared/storage";
+import { showNote } from "./note";
+import { getActiveIntentionFromBackground, sendMessage } from "./runtime";
 
 const OVERLAY_ID = "waih-overlay-root";
 const ACTIVE_INTENTION_KEY = "waih_active_intention";
@@ -27,38 +28,6 @@ function setActiveIntention(intention: ActiveIntention): void {
   sessionStorage.setItem(ACTIVE_INTENTION_KEY, JSON.stringify(intention));
 }
 
-function sendMessage(
-  message: RuntimeMessage
-): Promise<RuntimeResponse | null> {
-  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
-    return Promise.resolve(null);
-  }
-
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(message, (response) => {
-      if (chrome.runtime.lastError) {
-        resolve(null);
-        return;
-      }
-      resolve(response as RuntimeResponse);
-    });
-  });
-}
-
-async function getBackgroundIntention(
-  domain: string
-): Promise<ActiveIntention | null> {
-  const response = await sendMessage({ type: "get_active_intention" });
-  const active = response?.activeIntention ?? null;
-  if (!active) return null;
-  if (active.domain !== domain) return null;
-  return {
-    domain: active.domain,
-    intention: active.intention,
-    createdAt: active.createdAt
-  };
-}
-
 async function shouldShowOverlay(): Promise<boolean> {
   const hostname = normalizeHostname(window.location.hostname);
   if (!hostname) return false;
@@ -68,9 +37,8 @@ async function shouldShowOverlay(): Promise<boolean> {
     return false;
   }
 
-  const existing =
-    (await getBackgroundIntention(hostname)) ??
-    getActiveIntention(hostname);
+  const backgroundIntention = await getActiveIntentionFromBackground(hostname);
+  const existing = backgroundIntention ?? getActiveIntention(hostname);
   return !existing;
 }
 
@@ -198,15 +166,22 @@ function createOverlay(): HTMLDivElement {
     }
 
     const timestamp = Date.now();
-    setActiveIntention({
+    const activeIntention = {
       domain: hostname,
       intention,
       createdAt: timestamp
-    });
+    };
+
+    setActiveIntention(activeIntention);
 
     void sendMessage({
       type: "intention_submitted",
       payload: { domain: hostname, intention, timestamp }
+    });
+
+    showNote({
+      ...activeIntention,
+      tabId: -1
     });
 
     root.remove();
