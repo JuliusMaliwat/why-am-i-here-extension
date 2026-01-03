@@ -246,8 +246,16 @@ function createOverlay(
       display: flex;
       align-items: center;
       gap: 10px;
+      cursor: text;
+      user-select: none;
+    }
+    .pill.is-pill {
+      cursor: grab;
+    }
+    .pill.is-pill input {
       cursor: grab;
       user-select: none;
+      pointer-events: none;
     }
     .pill.is-free {
       transform: none;
@@ -311,7 +319,7 @@ function createOverlay(
   overlay.className = "overlay";
 
   const pill = document.createElement("div");
-  pill.className = "pill";
+  pill.className = `pill ${mode === "gate" ? "is-gate" : "is-pill"}`;
 
   const form = document.createElement("form");
   const input = document.createElement("input");
@@ -344,6 +352,7 @@ function createOverlay(
     }
   };
 
+  let hasDrag = false;
   if (mode === "gate") {
     input.addEventListener("input", () => {
       updateTypingState();
@@ -390,7 +399,15 @@ function createOverlay(
       input.blur();
       button.remove();
       pill.classList.remove("is-typing");
+      pill.classList.remove("is-gate");
+      pill.classList.add("is-pill");
       updateSizing();
+
+      if (!hasDrag) {
+        enableDragging(pill, position);
+        savePillPosition(position);
+        hasDrag = true;
+      }
 
       unlockScroll();
       activeOverlayInput = null;
@@ -418,8 +435,11 @@ function createOverlay(
 
   const position = loadPillPosition() ?? getDefaultPillPosition();
   applyPillPosition(pill, position);
-  enableDragging(pill, position);
-  savePillPosition(position);
+  if (mode === "pill") {
+    enableDragging(pill, position);
+    savePillPosition(position);
+    hasDrag = true;
+  }
 
   return root;
 }
