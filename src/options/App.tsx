@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { normalizeDomain } from "../shared/domains";
 import { getConfig, setConfig } from "../shared/storage";
 
 type EditState = {
@@ -7,33 +8,6 @@ type EditState = {
 };
 
 const HELP_EXAMPLE = "youtube.com";
-
-function normalizeDomain(raw: string): { value?: string; error?: string } {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return { error: "Enter a domain to add." };
-  }
-
-  const withScheme = trimmed.match(/^https?:\/\//i)
-    ? trimmed
-    : `https://${trimmed}`;
-
-  try {
-    const url = new URL(withScheme);
-    const hostname = url.hostname.toLowerCase();
-    const isAllowedHost =
-      hostname === "localhost" || hostname.includes(".");
-    const isValidChars = /^[a-z0-9.-]+$/.test(hostname);
-
-    if (!hostname || !isAllowedHost || !isValidChars) {
-      return { error: `Use a valid domain like ${HELP_EXAMPLE}.` };
-    }
-
-    return { value: hostname };
-  } catch {
-    return { error: `Use a valid domain like ${HELP_EXAMPLE}.` };
-  }
-}
 
 function uniqueDomains(domains: string[]): string[] {
   const seen = new Set<string>();

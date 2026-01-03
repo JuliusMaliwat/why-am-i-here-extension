@@ -22,7 +22,7 @@
   * Output: user can add/remove/edit domains
   * DoD: domains persist; invalid entries handled gently
 
-* [ ] **Domain normalization + matching rules**
+* [x] **Domain normalization + matching rules**
 
   * Output: consistent matching for exact + subdomains
   * DoD: matches `youtube.com` → `www.youtube.com`, doesn’t match unrelated domains
