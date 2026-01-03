@@ -5,6 +5,10 @@ import { getActiveIntentionFromBackground, sendMessage } from "./runtime";
 
 const OVERLAY_ID = "waih-overlay-root";
 const ACTIVE_INTENTION_KEY = "waih_active_intention";
+const SCROLL_LOCK_CLASS = "waih-scroll-lock";
+const SCROLL_LOCK_ATTR = "data-waih-scroll-lock";
+const SCROLL_TOP_ATTR = "data-waih-scroll-top";
+let activeOverlayInput: HTMLInputElement | null = null;
 
 type ActiveIntention = {
   domain: string;
@@ -26,6 +30,85 @@ function getActiveIntention(domain: string): ActiveIntention | null {
 
 function setActiveIntention(intention: ActiveIntention): void {
   sessionStorage.setItem(ACTIVE_INTENTION_KEY, JSON.stringify(intention));
+}
+
+function lockScroll(): void {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+  document.documentElement.setAttribute(SCROLL_TOP_ATTR, String(scrollTop));
+
+  document.documentElement.classList.add(SCROLL_LOCK_CLASS);
+  document.body.classList.add(SCROLL_LOCK_CLASS);
+
+  document.documentElement.setAttribute(SCROLL_LOCK_ATTR, "true");
+  document.body.setAttribute(SCROLL_LOCK_ATTR, "true");
+
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${scrollTop}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+
+  document.addEventListener("wheel", preventScroll, { passive: false });
+  document.addEventListener("touchmove", preventScroll, { passive: false });
+  document.addEventListener("keydown", preventKeyScroll, true);
+}
+
+function unlockScroll(): void {
+  const scrollTopValue =
+    document.documentElement.getAttribute(SCROLL_TOP_ATTR) || "0";
+  const scrollTop = Number(scrollTopValue) || 0;
+
+  document.documentElement.classList.remove(SCROLL_LOCK_CLASS);
+  document.body.classList.remove(SCROLL_LOCK_CLASS);
+  document.documentElement.removeAttribute(SCROLL_LOCK_ATTR);
+  document.body.removeAttribute(SCROLL_LOCK_ATTR);
+
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  document.body.style.overflow = "";
+  document.documentElement.style.overflow = "";
+
+  document.removeEventListener("wheel", preventScroll);
+  document.removeEventListener("touchmove", preventScroll);
+  document.removeEventListener("keydown", preventKeyScroll, true);
+
+  window.scrollTo(0, scrollTop);
+  document.documentElement.removeAttribute(SCROLL_TOP_ATTR);
+}
+
+function preventScroll(event: Event): void {
+  event.preventDefault();
+}
+
+function preventKeyScroll(event: KeyboardEvent): void {
+  if (activeOverlayInput) {
+    const path = event.composedPath();
+    if (path.includes(activeOverlayInput)) {
+      return;
+    }
+    const root = activeOverlayInput.getRootNode();
+    if ("activeElement" in root && root.activeElement === activeOverlayInput) {
+      return;
+    }
+  }
+
+  const keys = [
+    "ArrowUp",
+    "ArrowDown",
+    "PageUp",
+    "PageDown",
+    "Home",
+    "End",
+    " "
+  ];
+  if (keys.includes(event.key)) {
+    event.preventDefault();
+  }
 }
 
 async function shouldShowOverlay(): Promise<boolean> {
@@ -50,6 +133,7 @@ function createOverlay(): HTMLDivElement {
   const style = document.createElement("style");
   style.textContent = `
     :host { all: initial; }
+    :host, :host * { box-sizing: border-box; }
     .overlay {
       position: fixed;
       inset: 0;
@@ -137,7 +221,7 @@ function createOverlay(): HTMLDivElement {
 
   const button = document.createElement("button");
   button.type = "submit";
-  button.textContent = "↵ Enter";
+  button.textContent = "Enter";
 
   const updateTypingState = (): void => {
     if (input.value.trim().length > 0) {
@@ -148,6 +232,7 @@ function createOverlay(): HTMLDivElement {
   };
 
   input.addEventListener("input", updateTypingState);
+  activeOverlayInput = input;
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -187,6 +272,8 @@ function createOverlay(): HTMLDivElement {
     });
 
     root.remove();
+    activeOverlayInput = null;
+    unlockScroll();
   });
 
   form.append(input, button);
@@ -205,6 +292,7 @@ export async function mountOverlay(): Promise<void> {
     return;
   }
 
+  lockScroll();
   const hostname = normalizeHostname(window.location.hostname);
   if (hostname) {
     void sendMessage({
