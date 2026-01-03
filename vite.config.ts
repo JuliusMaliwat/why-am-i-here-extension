@@ -7,9 +7,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        options: resolve(__dirname, "options.html"),
-        content: resolve(__dirname, "src/content/index.ts"),
-        background: resolve(__dirname, "src/background/index.ts")
+        options: resolve(__dirname, "options.html")
+      },
+      output: {
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "chunks/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]"
       }
     },
     emptyOutDir: true
