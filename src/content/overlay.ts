@@ -359,6 +359,9 @@ function createOverlay(
       updateSizing();
     });
     activeOverlayInput = input;
+    setTimeout(() => {
+      input.focus();
+    }, 0);
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
