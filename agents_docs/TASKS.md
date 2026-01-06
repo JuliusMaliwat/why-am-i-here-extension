@@ -46,7 +46,7 @@
   * Output: floating pill displays the submitted intention
   * DoD: visible, readable, unobtrusive, draggable
 
-* [ ] **Persistence across navigation**
+* [x] **Persistence across navigation**
 
   * Output: pill remains on same domain navigation (basic SPA support)
   * DoD: refresh rehydrates; typical in-site navigation keeps pill
