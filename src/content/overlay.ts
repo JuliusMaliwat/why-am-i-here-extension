@@ -307,17 +307,12 @@ function createOverlay(
     }
     .timebox-row {
       position: absolute;
-      top: calc(100% + 8px);
+      top: calc(100% + 6px);
       left: 50%;
       transform: translateX(-50%);
       display: none;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.92);
-      border-radius: 999px;
-      padding: 6px 10px;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+      gap: 6px;
       font-size: 0.75rem;
       color: rgba(23, 26, 29, 0.7);
       z-index: 2147483647;
@@ -327,16 +322,17 @@ function createOverlay(
     }
     .timebox-option {
       border: none;
-      background: transparent;
-      color: inherit;
+      background: rgba(255, 255, 255, 0.65);
+      color: rgba(23, 26, 29, 0.75);
       font-size: 0.75rem;
-      padding: 4px 8px;
+      padding: 4px 10px;
       border-radius: 999px;
       cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
     }
     .timebox-option.is-selected {
-      background: rgba(23, 26, 29, 0.08);
-      color: rgba(23, 26, 29, 0.9);
+      background: rgba(23, 26, 29, 0.12);
+      color: rgba(23, 26, 29, 0.95);
       font-weight: 600;
     }
     .timebox-custom {
@@ -386,9 +382,6 @@ function createOverlay(
   const timeboxRow = document.createElement("div");
   timeboxRow.className = "timebox-row";
 
-  const timeboxLabel = document.createElement("span");
-  timeboxLabel.textContent = "Timebox";
-
   const presetValues = [5, 10, 20];
   const presetButtons = presetValues.map((value) => {
     const preset = document.createElement("button");
@@ -416,13 +409,8 @@ function createOverlay(
   customInput.setAttribute("aria-label", "Custom minutes");
   customInput.style.display = "none";
 
-  const clearButton = document.createElement("button");
-  clearButton.type = "button";
-  clearButton.className = "timebox-option";
-  clearButton.textContent = "No timer";
-
   customWrapper.append(customToggle, customInput);
-  timeboxRow.append(timeboxLabel, ...presetButtons, customWrapper, clearButton);
+  timeboxRow.append(...presetButtons, customWrapper);
 
   const updateSizing = (): void => {
     const value = input.value.trim() || input.placeholder;
@@ -495,11 +483,6 @@ function createOverlay(
       customInput.value = String(clamped);
     }
     selectMinutes(clamped);
-  });
-
-  clearButton.addEventListener("click", () => {
-    customInput.style.display = "none";
-    selectMinutes(null);
   });
 
   if (mode === "gate") {
