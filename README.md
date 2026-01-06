@@ -7,7 +7,7 @@ When a user visits specific distracting domains (configured by the user), the ex
 
 > **“Why am I here?”**
 
-To continue, the user must write an intention. Once submitted, the intention remains visible as a small floating note while the user is on that site, acting as a constant reminder of the goal.
+To continue, the user must write an intention. Once submitted, the intention remains visible as a small floating pill while the user is on that site, acting as a constant reminder of the goal.
 
 The product is inspired by existing “browse with intention” tools (e.g. Purposely, With Intention), and differentiates itself with a **time-based intention** feature: users can optionally set a number of minutes for the intention; when the time expires, the overlay returns and asks again.
 
@@ -40,7 +40,7 @@ Many people open certain websites reflexively (social media, news, entertainment
 ## Core Concepts
 - **Domain list**: a user-defined set of domains where the intention prompt should appear.
 - **Overlay prompt**: a full-page overlay that blocks access until an intention is entered.
-- **Intention note**: a floating, persistent reminder shown while browsing the domain.
+- **Intention pill**: a floating, persistent reminder shown while browsing the domain.
 - **Time-box (optional)**: an intention can include a duration in minutes. When time runs out, the overlay is shown again.
 
 ---

@@ -9,7 +9,7 @@
 - **Target domain**: A user-configured domain where the intention gate should trigger.
 - **Overlay (Gate)**: Full-page UI that blocks access until an intention is entered.
 - **Intention**: Short text written by the user describing why they’re on the site.
-- **Floating note**: Small persistent UI element that displays the current intention while browsing the target domain.
+- **Floating pill**: Small persistent UI element that displays the current intention while browsing the target domain.
 - **Time-box**: Optional minutes attached to an intention; when it ends, the overlay returns (v1).
 
 ---
@@ -25,10 +25,10 @@
 - The user MUST NOT be able to proceed with an empty intention.
 - After a valid intention is submitted, the overlay MUST disappear immediately.
 
-### R3 — Floating intention reminder
-- After submitting an intention on a target domain, a floating note MUST appear displaying the intention text.
-- The floating note MUST remain visible while the user browses within the same target domain.
-- The floating note MUST be unobtrusive (small) but readable.
+### R3 — Floating intention pill
+- After submitting an intention on a target domain, a floating pill MUST appear displaying the intention text.
+- The floating pill MUST remain visible while the user browses within the same target domain.
+- The floating pill MUST be unobtrusive (small) but readable.
 
 ### R4 — Minimal behavior tracking (for future insights)
 The extension MUST record these events at minimum:
@@ -46,7 +46,7 @@ Additionally, it SHOULD record:
 - Templates MUST be optional and not block manual typing.
 
 ### R6 — Edit intention
-- The user MAY be able to update the intention during the session (e.g., via the floating note).
+- The user MAY be able to update the intention during the session (e.g., via the floating pill).
 - If edited, it SHOULD create a new **intention_submitted** event.
 
 ---
@@ -95,15 +95,15 @@ As a user, I want my intention prompts and submissions recorded so I can later r
 **When** I submit a non-empty intention  
 **Then** the overlay disappears and I can use the site.
 
-### AC3 — Floating note appears after submission
+### AC3 — Floating pill appears after submission
 **Given** I submitted an intention on a target domain  
 **When** the overlay closes  
-**Then** a floating note is visible showing my intention.
+**Then** a floating pill is visible showing my intention.
 
-### AC4 — Floating note persists across navigation on the same domain
-**Given** the floating note is visible on a target domain  
+### AC4 — Floating pill persists across navigation on the same domain
+**Given** the floating pill is visible on a target domain  
 **When** I navigate to another page within the same domain (including typical in-site navigation)  
-**Then** the floating note remains visible and still shows the current intention.
+**Then** the floating pill remains visible and still shows the current intention.
 
 ### AC5 — Tracking events are recorded
 **Given** the overlay appears  
@@ -130,13 +130,13 @@ As a user, I want my intention prompts and submissions recorded so I can later r
 5. **Redirects**:
    - If navigating to a target domain via redirects, overlay should still appear once landing on the target domain.
 6. **Single Page Apps (SPA)**:
-   - In-site navigation should not “lose” the floating note.
+   - In-site navigation should not “lose” the floating pill.
 7. **Overlay duplication**:
    - Overlay should not stack multiple times due to repeated triggers.
 8. **Intention visibility**:
-   - The floating note should stay on top and not be hidden behind page content.
+   - The floating pill should stay on top and not be hidden behind page content.
 9. **Performance**:
-   - Overlay/note should not noticeably slow page load on target domains.
+   - Overlay/pill should not noticeably slow page load on target domains.
 10. **User leaves without submitting intention**:
    - Still counts as **overlay_shown**; no **intention_submitted** event.
 
@@ -146,7 +146,7 @@ As a user, I want my intention prompts and submissions recorded so I can later r
 If you change these later, update this file + log it in `docs/DECISIONS.md`.
 
 - A1: The intention is required (non-empty) to proceed.
-- A2: The floating note persists within the same tab while browsing the same target domain.
+- A2: The floating pill persists within the same tab while browsing the same target domain.
 - A3: Domain matching includes subdomains by default (e.g., `youtube.com` matches `www.youtube.com`).
 - A4: Tracking is local-first (data for the user), and stores only what is needed for product value.
 

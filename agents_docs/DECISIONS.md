@@ -13,6 +13,7 @@
 * 2026-01-01 — **Domain matching includes subdomains** — user expects `youtube.com` to cover `www.` and other subdomains — gating may apply to more pages than exact-only.
 * 2026-01-01 — **Local-first data storage** — aligns with mindfulness tool ethos, reduces complexity — no accounts/sync in MVP.
 * 2026-01-01 — **Event model is append-only (minimal)** — supports future insights without overengineering — record `overlay_shown` and `intention_submitted` (timer events later).
+* 2026-01-01 — **Use floating pill (same overlay component) instead of separate note** — closer to reference UX, simpler visual language — pill remains after submit, draggable.
 
 ---
 

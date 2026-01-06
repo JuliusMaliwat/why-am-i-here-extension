@@ -1,7 +1,7 @@
 # One-Page PRD — why am i here (Turn doom scrolling into intention)
 
 ## 1) Product Summary
-**why am i here** is a Chrome/Edge extension that interrupts autopilot browsing on user-selected domains by showing an overlay asking **“Why am I here?”**. The user must write an intention to access the page. Afterward, the intention remains visible as a floating note. A differentiator is **time-boxed intentions**: users can set minutes; when time expires, the overlay returns.
+**why am i here** is a Chrome/Edge extension that interrupts autopilot browsing on user-selected domains by showing an overlay asking **“Why am I here?”**. The user must write an intention to access the page. Afterward, the intention remains visible as a floating pill. A differentiator is **time-boxed intentions**: users can set minutes; when time expires, the overlay returns.
 
 ---
 
@@ -49,7 +49,7 @@ Users often open distracting sites reflexively and lose time without a goal. Har
 2. User navigates to a configured domain.
 3. Overlay blocks page and asks: **Why am I here?**
 4. User writes an intention and continues.
-5. A floating intention note remains visible on the site.
+5. A floating intention pill remains visible on the site.
 
 ### Flow B — Time-boxed Intention (Differentiator)
 1. On overlay, user optionally sets minutes (e.g., 5/10/20/custom).
@@ -141,7 +141,7 @@ Users often open distracting sites reflexively and lose time without a goal. Har
 ## 12) UX Principles
 - Calm, minimal, low-friction UI.
 - “Gentle interruption” not shaming.
-- The intention note should be noticeable but not annoying.
+- The intention pill should be noticeable but not annoying.
 
 ---
 
