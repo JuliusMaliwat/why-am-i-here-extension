@@ -51,3 +51,9 @@ without forcing it. This is written for agents to implement consistently.
 - Expiry re‑prompts with prefilled intention.
 - Storage in background (per‑tab) and events recorded.
 
+## Implementation Notes (for agents)
+- UI: `src/content/overlay.ts` (timebox row, countdown label, expiry re‑prompt).
+- State: `src/background/index.ts` (timer lifecycle per tab).
+- Storage: `src/shared/storage.ts` (timer state, events).
+- Types: `src/shared/types.ts` (timer fields, events).
+- Events: `timer_started`, `timer_expired` include domain + timestamp + minutes.
