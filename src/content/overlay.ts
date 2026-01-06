@@ -305,6 +305,53 @@ function createOverlay(
       margin: 0;
       min-height: 1.1em;
     }
+    .timebox-row {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+      font-size: 0.75rem;
+      color: rgba(23, 26, 29, 0.7);
+      z-index: 2147483647;
+    }
+    .timebox-row.is-visible {
+      display: inline-flex;
+    }
+    .timebox-option {
+      border: none;
+      background: transparent;
+      color: inherit;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .timebox-option.is-selected {
+      background: rgba(23, 26, 29, 0.08);
+      color: rgba(23, 26, 29, 0.9);
+      font-weight: 600;
+    }
+    .timebox-custom {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .timebox-custom input {
+      width: 44px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      font-size: 0.75rem;
+      text-align: center;
+    }
     .sizer {
       position: absolute;
       visibility: hidden;
@@ -336,6 +383,47 @@ function createOverlay(
   button.type = "submit";
   button.textContent = "Enter";
 
+  const timeboxRow = document.createElement("div");
+  timeboxRow.className = "timebox-row";
+
+  const timeboxLabel = document.createElement("span");
+  timeboxLabel.textContent = "Timebox";
+
+  const presetValues = [5, 10, 20];
+  const presetButtons = presetValues.map((value) => {
+    const preset = document.createElement("button");
+    preset.type = "button";
+    preset.className = "timebox-option";
+    preset.textContent = `${value}m`;
+    preset.dataset.value = String(value);
+    return preset;
+  });
+
+  const customWrapper = document.createElement("div");
+  customWrapper.className = "timebox-custom";
+
+  const customToggle = document.createElement("button");
+  customToggle.type = "button";
+  customToggle.className = "timebox-option";
+  customToggle.textContent = "Custom";
+
+  const customInput = document.createElement("input");
+  customInput.type = "number";
+  customInput.min = "1";
+  customInput.max = "60";
+  customInput.inputMode = "numeric";
+  customInput.placeholder = "10";
+  customInput.setAttribute("aria-label", "Custom minutes");
+  customInput.style.display = "none";
+
+  const clearButton = document.createElement("button");
+  clearButton.type = "button";
+  clearButton.className = "timebox-option";
+  clearButton.textContent = "No timer";
+
+  customWrapper.append(customToggle, customInput);
+  timeboxRow.append(timeboxLabel, ...presetButtons, customWrapper, clearButton);
+
   const updateSizing = (): void => {
     const value = input.value.trim() || input.placeholder;
     sizer.textContent = value;
@@ -347,18 +435,80 @@ function createOverlay(
   const updateTypingState = (): void => {
     if (input.value.trim().length > 0) {
       pill.classList.add("is-typing");
+      timeboxRow.classList.add("is-visible");
     } else {
       pill.classList.remove("is-typing");
+      timeboxRow.classList.remove("is-visible");
     }
   };
 
   let hasDrag = false;
+  let selectedMinutes: number | null = null;
+
+  const syncMinutes = (): void => {
+    if (selectedMinutes == null) {
+      form.dataset.timerMinutes = "";
+    } else {
+      form.dataset.timerMinutes = String(selectedMinutes);
+    }
+  };
+
+  const selectMinutes = (value: number | null): void => {
+    selectedMinutes = value;
+    presetButtons.forEach((preset) => {
+      const presetValue = Number(preset.dataset.value || 0);
+      if (value != null && presetValue === value) {
+        preset.classList.add("is-selected");
+      } else {
+        preset.classList.remove("is-selected");
+      }
+    });
+    if (value == null) {
+      customToggle.classList.remove("is-selected");
+      customInput.value = "";
+    }
+    syncMinutes();
+  };
+
+  presetButtons.forEach((preset) => {
+    preset.addEventListener("click", () => {
+      const value = Number(preset.dataset.value || 0);
+      customInput.style.display = "none";
+      selectMinutes(value);
+    });
+  });
+
+  customToggle.addEventListener("click", () => {
+    customInput.style.display = "inline-block";
+    customInput.focus();
+    customToggle.classList.add("is-selected");
+  });
+
+  customInput.addEventListener("input", () => {
+    const value = Number(customInput.value);
+    if (Number.isNaN(value)) {
+      selectMinutes(null);
+      return;
+    }
+    const clamped = clamp(value, 1, 60);
+    if (value !== clamped) {
+      customInput.value = String(clamped);
+    }
+    selectMinutes(clamped);
+  });
+
+  clearButton.addEventListener("click", () => {
+    customInput.style.display = "none";
+    selectMinutes(null);
+  });
+
   if (mode === "gate") {
     input.addEventListener("input", () => {
       updateTypingState();
       updateSizing();
     });
     activeOverlayInput = input;
+    syncMinutes();
     setTimeout(() => {
       input.focus();
     }, 0);
@@ -402,6 +552,7 @@ function createOverlay(
       input.blur();
       button.remove();
       pill.classList.remove("is-typing");
+      timeboxRow.remove();
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
       updateSizing();
@@ -428,7 +579,7 @@ function createOverlay(
 
   if (mode === "gate") {
     form.append(input, button);
-    pill.append(form, error);
+    pill.append(form, error, timeboxRow);
     shadow.append(style, sizer, overlay, pill);
   } else {
     form.append(input);
