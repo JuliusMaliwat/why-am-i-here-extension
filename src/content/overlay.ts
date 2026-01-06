@@ -322,8 +322,8 @@ function createOverlay(
     }
     .timebox-option {
       border: none;
-      background: rgba(255, 255, 255, 0.65);
-      color: rgba(23, 26, 29, 0.75);
+      background: rgba(255, 255, 255, 0.8);
+      color: rgba(23, 26, 29, 0.8);
       font-size: 0.75rem;
       padding: 4px 10px;
       border-radius: 999px;
@@ -331,7 +331,7 @@ function createOverlay(
       transition: background 0.15s ease, color 0.15s ease;
     }
     .timebox-option.is-selected {
-      background: rgba(23, 26, 29, 0.12);
+      background: rgba(255, 255, 255, 1);
       color: rgba(23, 26, 29, 0.95);
       font-weight: 600;
     }
@@ -342,11 +342,21 @@ function createOverlay(
     }
     .timebox-custom input {
       width: 44px;
-      padding: 2px 6px;
+      padding: 2px 4px;
       border-radius: 8px;
-      border: 1px solid rgba(0, 0, 0, 0.12);
+      border: none;
+      background: transparent;
       font-size: 0.75rem;
       text-align: center;
+      outline: none;
+    }
+    .timebox-custom input::-webkit-outer-spin-button,
+    .timebox-custom input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .timebox-custom input[type="number"] {
+      -moz-appearance: textfield;
     }
     .sizer {
       position: absolute;
@@ -401,7 +411,7 @@ function createOverlay(
   customToggle.textContent = "Custom";
 
   const customInput = document.createElement("input");
-  customInput.type = "number";
+  customInput.type = "text";
   customInput.min = "1";
   customInput.max = "60";
   customInput.inputMode = "numeric";
@@ -409,7 +419,11 @@ function createOverlay(
   customInput.setAttribute("aria-label", "Custom minutes");
   customInput.style.display = "none";
 
-  customWrapper.append(customToggle, customInput);
+  const customSuffix = document.createElement("span");
+  customSuffix.textContent = "M";
+  customSuffix.style.display = "none";
+
+  customWrapper.append(customToggle, customInput, customSuffix);
   timeboxRow.append(...presetButtons, customWrapper);
 
   const updateSizing = (): void => {
@@ -442,18 +456,23 @@ function createOverlay(
   };
 
   const selectMinutes = (value: number | null): void => {
-    selectedMinutes = value;
+    const toggled =
+      value != null && selectedMinutes != null && value === selectedMinutes;
+    selectedMinutes = toggled ? null : value;
     presetButtons.forEach((preset) => {
       const presetValue = Number(preset.dataset.value || 0);
-      if (value != null && presetValue === value) {
+      if (selectedMinutes != null && presetValue === selectedMinutes) {
         preset.classList.add("is-selected");
       } else {
         preset.classList.remove("is-selected");
       }
     });
-    if (value == null) {
+    if (selectedMinutes == null) {
       customToggle.classList.remove("is-selected");
+      customInput.style.display = "none";
+      customSuffix.style.display = "none";
       customInput.value = "";
+      customToggle.textContent = "Custom";
     }
     syncMinutes();
   };
@@ -461,19 +480,22 @@ function createOverlay(
   presetButtons.forEach((preset) => {
     preset.addEventListener("click", () => {
       const value = Number(preset.dataset.value || 0);
-      customInput.style.display = "none";
       selectMinutes(value);
     });
   });
 
   customToggle.addEventListener("click", () => {
     customInput.style.display = "inline-block";
-    customInput.focus();
+    customSuffix.style.display = "inline";
+    customToggle.textContent = "";
     customToggle.classList.add("is-selected");
+    customInput.focus();
   });
 
   customInput.addEventListener("input", () => {
-    const value = Number(customInput.value);
+    const raw = customInput.value.replace(/\D/g, "");
+    customInput.value = raw;
+    const value = Number(raw);
     if (Number.isNaN(value)) {
       selectMinutes(null);
       return;
