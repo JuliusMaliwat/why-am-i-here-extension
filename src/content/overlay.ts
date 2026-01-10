@@ -223,6 +223,7 @@ type OverlayInit = {
   mode: OverlayMode;
   intentionText?: string;
   timerEndsAt?: number;
+  timerMinutes?: number;
 };
 
 function createOverlay(init: OverlayInit): HTMLDivElement {
@@ -512,7 +513,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     }
   };
 
-  const showGate = (): void => {
+  const showGate = (minutes?: number): void => {
     position.mode = "center";
     position.x = window.innerWidth / 2;
     applyPillPosition(pill, position);
@@ -528,9 +529,22 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     timerText.style.display = "none";
     updateTypingState();
     lockScroll();
+    if (latestIntentionText) {
+      void sendMessage({
+        type: "timer_expired",
+        payload: {
+          domain: normalizeHostname(window.location.hostname) || "",
+          timestamp: Date.now(),
+          minutes
+        }
+      });
+    }
   };
 
-  const startCountdown = (endsAt: number | null | undefined): void => {
+  const startCountdown = (
+    endsAt: number | null | undefined,
+    minutes?: number
+  ): void => {
     if (!endsAt) {
       timerText.textContent = "";
       timerText.style.display = "none";
@@ -549,7 +563,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         stopCountdown();
         timerText.textContent = "";
         timerText.style.display = "none";
-        showGate();
+        showGate(minutes);
       }
     };
 
@@ -702,7 +716,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
       updateSizing();
-      startCountdown(endsAt);
+      startCountdown(endsAt, minutes > 0 ? minutes : undefined);
 
       if (!hasDrag) {
         enableDragging(pill, position);
@@ -721,7 +735,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     button.remove();
     error.remove();
     pill.classList.remove("is-typing");
-    startCountdown(timerEndsAt);
+    startCountdown(timerEndsAt, init.timerMinutes);
   }
 
   updateSizing();
@@ -766,6 +780,14 @@ export async function mountOverlay(): Promise<void> {
       existingIntention.timerEndsAt &&
       existingIntention.timerEndsAt <= Date.now()
     ) {
+      void sendMessage({
+        type: "timer_expired",
+        payload: {
+          domain: hostname,
+          timestamp: Date.now(),
+          minutes: existingIntention.timerMinutes
+        }
+      });
       lockScroll();
       document.documentElement.appendChild(
         createOverlay({
@@ -779,7 +801,8 @@ export async function mountOverlay(): Promise<void> {
       createOverlay({
         mode: "pill",
         intentionText: existingIntention.intention,
-        timerEndsAt: existingIntention.timerEndsAt
+        timerEndsAt: existingIntention.timerEndsAt,
+        timerMinutes: existingIntention.timerMinutes
       })
     );
     return;

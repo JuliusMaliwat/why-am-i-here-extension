@@ -7,7 +7,11 @@ export type ActiveIntentionState = {
   timerEndsAt?: number;
 };
 
-export type EventType = "overlay_shown" | "intention_submitted";
+export type EventType =
+  | "overlay_shown"
+  | "intention_submitted"
+  | "timer_started"
+  | "timer_expired";
 
 export type EventRecord = {
   type: EventType;
@@ -15,4 +19,5 @@ export type EventRecord = {
   timestamp: number;
   intention?: string;
   tabId?: number;
+  minutes?: number;
 };

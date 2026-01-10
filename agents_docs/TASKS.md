@@ -101,7 +101,7 @@
   * Output: persist running timer and intention state
   * DoD: refresh rehydrates countdown; per-tab isolation
 
-* [ ] **Record timer events**
+* [x] **Record timer events**
 
   * Output: log `timer_started`, `timer_expired`
   * DoD: includes domain + timestamp + minutes

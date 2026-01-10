@@ -15,6 +15,10 @@ export type RuntimeMessage =
       };
     }
   | {
+      type: "timer_expired";
+      payload: { domain: string; timestamp: number; minutes?: number };
+    }
+  | {
       type: "get_active_intention";
     };
 
