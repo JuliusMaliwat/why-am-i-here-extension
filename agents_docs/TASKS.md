@@ -91,7 +91,7 @@
   * Output: countdown shown as secondary text in the pill
   * DoD: starts on submit; hides when no timer selected
 
-* [ ] **Expiry re-prompt flow**
+* [x] **Expiry re-prompt flow**
 
   * Output: overlay returns on expiry with intention prefilled
   * DoD: user must submit new intention to continue

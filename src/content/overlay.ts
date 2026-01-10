@@ -491,6 +491,34 @@ function createOverlay(
     }
   };
 
+  const position = loadPillPosition() ?? getDefaultPillPosition();
+
+  let countdownId: number | null = null;
+
+  const stopCountdown = (): void => {
+    if (countdownId != null) {
+      window.clearInterval(countdownId);
+      countdownId = null;
+    }
+  };
+
+  const showGate = (): void => {
+    position.mode = "center";
+    position.x = window.innerWidth / 2;
+    applyPillPosition(pill, position);
+
+    overlay.style.display = "";
+    error.style.display = "";
+    pill.classList.remove("is-pill");
+    pill.classList.add("is-gate");
+    input.readOnly = false;
+    input.focus();
+    timerText.textContent = "";
+    timerText.style.display = "none";
+    updateTypingState();
+    lockScroll();
+  };
+
   const startCountdown = (minutes: number): void => {
     if (!minutes) {
       timerText.textContent = "";
@@ -508,13 +536,16 @@ function createOverlay(
       const secs = remainingSec % 60;
       timerText.textContent = `${mins}m ${secs}s`;
       if (remainingMs <= 0) {
-        timerText.textContent = "Time's up";
-        clearInterval(intervalId);
+        stopCountdown();
+        timerText.textContent = "";
+        timerText.style.display = "none";
+        showGate();
       }
     };
 
     update();
-    const intervalId = window.setInterval(update, 1000);
+    stopCountdown();
+    countdownId = window.setInterval(update, 1000);
   };
 
   let selectedMinutes: number | null = null;
@@ -635,13 +666,12 @@ function createOverlay(
         payload: { domain: hostname, intention, timestamp }
       });
 
-      overlay.remove();
-      error.remove();
-      timeboxRow.remove();
+      overlay.style.display = "none";
+      error.style.display = "none";
+      timeboxRow.classList.remove("is-visible");
       input.value = intention;
       input.readOnly = true;
       input.blur();
-      button.remove();
       pill.classList.remove("is-typing");
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
@@ -684,7 +714,6 @@ function createOverlay(
     shadow.append(style, sizer, pill);
   }
 
-  const position = loadPillPosition() ?? getDefaultPillPosition();
   applyPillPosition(pill, position);
   const cleanupResize = keepPillCenteredOnResize(pill, position);
   if (mode === "pill") {
