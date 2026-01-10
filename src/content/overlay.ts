@@ -308,6 +308,11 @@ function createOverlay(
       opacity: 1;
       pointer-events: auto;
     }
+    .timer-text {
+      font-size: 0.75rem;
+      color: rgba(23, 26, 29, 0.6);
+      white-space: nowrap;
+    }
     .error {
       position: absolute;
       top: calc(100% + 2.2rem);
@@ -420,6 +425,9 @@ function createOverlay(
   button.type = "submit";
   button.textContent = "Enter";
 
+  const timerText = document.createElement("span");
+  timerText.className = "timer-text";
+  timerText.style.display = "none";
   const timeboxRow = document.createElement("div");
   timeboxRow.className = "timebox-row";
 
@@ -476,6 +484,32 @@ function createOverlay(
       timeboxRow.classList.remove("is-visible");
       setSelectedMinutes(null, "clear");
     }
+  };
+
+  const startCountdown = (minutes: number): void => {
+    if (!minutes) {
+      timerText.textContent = "";
+      timerText.style.display = "none";
+      return;
+    }
+
+    const endTime = Date.now() + minutes * 60 * 1000;
+    timerText.style.display = "inline";
+
+    const update = (): void => {
+      const remainingMs = endTime - Date.now();
+      const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+      const mins = Math.floor(remainingSec / 60);
+      const secs = remainingSec % 60;
+      timerText.textContent = `${mins}m ${secs}s`;
+      if (remainingMs <= 0) {
+        timerText.textContent = "Time's up";
+        clearInterval(intervalId);
+      }
+    };
+
+    update();
+    const intervalId = window.setInterval(update, 1000);
   };
 
   let selectedMinutes: number | null = null;
@@ -607,6 +641,12 @@ function createOverlay(
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
       updateSizing();
+      const selected = Number(form.dataset.timerMinutes || 0);
+      if (selected > 0) {
+        startCountdown(selected);
+      } else {
+        timerText.style.display = "none";
+      }
 
       if (!hasDrag) {
         enableDragging(pill, position);
@@ -624,17 +664,18 @@ function createOverlay(
     button.remove();
     error.remove();
     pill.classList.remove("is-typing");
+    timerText.style.display = "none";
   }
 
   updateSizing();
 
-    if (mode === "gate") {
-      form.append(input, button);
-      pill.append(form, error, timeboxRow);
-      shadow.append(style, sizer, overlay, pill);
-    } else {
+  if (mode === "gate") {
+    form.append(input, button);
+    pill.append(form, timerText, error, timeboxRow);
+    shadow.append(style, sizer, overlay, pill);
+  } else {
     form.append(input);
-    pill.append(form);
+    pill.append(form, timerText);
     shadow.append(style, sizer, pill);
   }
 

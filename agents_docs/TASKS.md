@@ -86,7 +86,7 @@
   * Output: timebox row appears after typing starts
   * DoD: presets 5/10/20 + custom 1–60 + 
 
-* [ ] **Timer start + countdown in pill**
+* [x] **Timer start + countdown in pill**
 
   * Output: countdown shown as secondary text in the pill
   * DoD: starts on submit; hides when no timer selected
