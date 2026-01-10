@@ -3,6 +3,8 @@ export type ActiveIntentionState = {
   intention: string;
   createdAt: number;
   tabId: number;
+  timerMinutes?: number;
+  timerEndsAt?: number;
 };
 
 export type EventType = "overlay_shown" | "intention_submitted";

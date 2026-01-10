@@ -14,6 +14,8 @@ type ActiveIntention = {
   domain: string;
   intention: string;
   createdAt: number;
+  timerMinutes?: number;
+  timerEndsAt?: number;
 };
 
 type PillPosition = {
@@ -217,10 +219,14 @@ function enableDragging(pill: HTMLDivElement, position: PillPosition): void {
 
 type OverlayMode = "gate" | "pill";
 
-function createOverlay(
-  mode: OverlayMode,
-  intentionText?: string
-): HTMLDivElement {
+type OverlayInit = {
+  mode: OverlayMode;
+  intentionText?: string;
+  timerEndsAt?: number;
+};
+
+function createOverlay(init: OverlayInit): HTMLDivElement {
+  const { mode, intentionText, timerEndsAt } = init;
   const root = document.createElement("div");
   root.id = OVERLAY_ID;
   const shadow = root.attachShadow({ mode: "open" });
@@ -494,6 +500,10 @@ function createOverlay(
   const position = loadPillPosition() ?? getDefaultPillPosition();
 
   let countdownId: number | null = null;
+  let latestIntentionText = "";
+  if (intentionText) {
+    latestIntentionText = intentionText;
+  }
 
   const stopCountdown = (): void => {
     if (countdownId != null) {
@@ -512,6 +522,7 @@ function createOverlay(
     pill.classList.remove("is-pill");
     pill.classList.add("is-gate");
     input.readOnly = false;
+    input.value = latestIntentionText;
     input.focus();
     timerText.textContent = "";
     timerText.style.display = "none";
@@ -519,18 +530,17 @@ function createOverlay(
     lockScroll();
   };
 
-  const startCountdown = (minutes: number): void => {
-    if (!minutes) {
+  const startCountdown = (endsAt: number | null | undefined): void => {
+    if (!endsAt) {
       timerText.textContent = "";
       timerText.style.display = "none";
       return;
     }
 
-    const endTime = Date.now() + minutes * 60 * 1000;
     timerText.style.display = "inline";
 
     const update = (): void => {
-      const remainingMs = endTime - Date.now();
+      const remainingMs = endsAt - Date.now();
       const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
       const mins = Math.floor(remainingSec / 60);
       const secs = remainingSec % 60;
@@ -629,6 +639,10 @@ function createOverlay(
       updateTypingState();
       updateSizing();
     });
+    if (intentionText) {
+      input.value = intentionText;
+    }
+    updateTypingState();
     activeOverlayInput = input;
     setTimeout(() => {
       input.focus();
@@ -653,35 +667,42 @@ function createOverlay(
       }
 
       const timestamp = Date.now();
+      const minutes = Number(form.dataset.timerMinutes || 0);
+      const endsAt =
+        minutes > 0 ? timestamp + minutes * 60 * 1000 : undefined;
+
       const activeIntention = {
         domain: hostname,
         intention,
-        createdAt: timestamp
+        createdAt: timestamp,
+        timerMinutes: minutes > 0 ? minutes : undefined,
+        timerEndsAt: endsAt
       };
 
       setActiveIntention(activeIntention);
 
       void sendMessage({
         type: "intention_submitted",
-        payload: { domain: hostname, intention, timestamp }
+        payload: {
+          domain: hostname,
+          intention,
+          timestamp,
+          timerMinutes: minutes > 0 ? minutes : undefined
+        }
       });
 
       overlay.style.display = "none";
       error.style.display = "none";
       timeboxRow.classList.remove("is-visible");
       input.value = intention;
+      latestIntentionText = intention;
       input.readOnly = true;
       input.blur();
       pill.classList.remove("is-typing");
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
       updateSizing();
-      const selected = Number(form.dataset.timerMinutes || 0);
-      if (selected > 0) {
-        startCountdown(selected);
-      } else {
-        timerText.style.display = "none";
-      }
+      startCountdown(endsAt);
 
       if (!hasDrag) {
         enableDragging(pill, position);
@@ -694,12 +715,13 @@ function createOverlay(
     });
   } else {
     input.value = intentionText ?? "";
+    latestIntentionText = intentionText ?? "";
     input.readOnly = true;
     input.setAttribute("aria-readonly", "true");
     button.remove();
     error.remove();
     pill.classList.remove("is-typing");
-    timerText.style.display = "none";
+    startCountdown(timerEndsAt);
   }
 
   updateSizing();
@@ -740,8 +762,25 @@ export async function mountOverlay(): Promise<void> {
   const backgroundIntention = await getActiveIntentionFromBackground(hostname);
   const existingIntention = backgroundIntention ?? getActiveIntention(hostname);
   if (existingIntention) {
+    if (
+      existingIntention.timerEndsAt &&
+      existingIntention.timerEndsAt <= Date.now()
+    ) {
+      lockScroll();
+      document.documentElement.appendChild(
+        createOverlay({
+          mode: "gate",
+          intentionText: existingIntention.intention
+        })
+      );
+      return;
+    }
     document.documentElement.appendChild(
-      createOverlay("pill", existingIntention.intention)
+      createOverlay({
+        mode: "pill",
+        intentionText: existingIntention.intention,
+        timerEndsAt: existingIntention.timerEndsAt
+      })
     );
     return;
   }
@@ -752,5 +791,5 @@ export async function mountOverlay(): Promise<void> {
     payload: { domain: hostname, timestamp: Date.now() }
   });
 
-  document.documentElement.appendChild(createOverlay("gate"));
+  document.documentElement.appendChild(createOverlay({ mode: "gate" }));
 }

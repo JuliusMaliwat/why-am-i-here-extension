@@ -96,7 +96,7 @@
   * Output: overlay returns on expiry with intention prefilled
   * DoD: user must submit new intention to continue
 
-* [ ] **Timer state storage (per-tab)**
+* [x] **Timer state storage (per-tab)**
 
   * Output: persist running timer and intention state
   * DoD: refresh rehydrates countdown; per-tab isolation
