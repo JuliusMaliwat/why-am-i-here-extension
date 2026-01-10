@@ -236,7 +236,7 @@ function createOverlay(
       align-items: flex-start;
       justify-content: center;
       background: rgba(18, 20, 22, 0.72);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(14px);
       z-index: 2147483646;
       font-family: "Avenir Next", "Futura", "Segoe UI", sans-serif;
       color: #f4f5f7;
@@ -248,14 +248,18 @@ function createOverlay(
       left: 50%;
       top: 64px;
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.92),
+        rgba(255, 255, 255, 0.82)
+      );
       color: #171a1d;
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.06);
       border-radius: 999px;
-      padding: 12px 18px;
+      padding: 14px 20px;
       min-width: 220px;
       max-width: 420px;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -284,11 +288,12 @@ function createOverlay(
       background: transparent;
       border: none;
       color: inherit;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
+      font-weight: 500;
       outline: none;
     }
     input::placeholder {
-      color: rgba(23, 26, 29, 0.45);
+      color: rgba(23, 26, 29, 0.42);
     }
     button {
       background: transparent;
@@ -309,8 +314,8 @@ function createOverlay(
       pointer-events: auto;
     }
     .timer-text {
-      font-size: 0.75rem;
-      color: rgba(23, 26, 29, 0.6);
+      font-size: 0.7rem;
+      color: rgba(23, 26, 29, 0.45);
       white-space: nowrap;
     }
     .error {
