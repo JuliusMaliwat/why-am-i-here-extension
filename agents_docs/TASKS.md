@@ -81,11 +81,35 @@
 
 (Do not start until MVP is stable.)
 
-* [ ] **Minutes input on overlay (optional)**
-* [ ] **Timer manager concept** (scope decision first)
-* [ ] **On expiry: overlay returns**
-* [ ] **Record timer events**: `timer_started`, `timer_expired`
-* [ ] **QA**: expiry in active tab, inactive tab, multiple tabs
+* [x] **Timebox UI (presets + optional custom)**
+
+  * Output: timebox row appears after typing starts
+  * DoD: presets 5/10/20 + custom 1–60 + 
+
+* [x] **Timer start + countdown in pill**
+
+  * Output: countdown shown as secondary text in the pill
+  * DoD: starts on submit; hides when no timer selected
+
+* [x] **Expiry re-prompt flow**
+
+  * Output: overlay returns on expiry with intention prefilled
+  * DoD: user must submit new intention to continue
+
+* [x] **Timer state storage (per-tab)**
+
+  * Output: persist running timer and intention state
+  * DoD: refresh rehydrates countdown; per-tab isolation
+
+* [x] **Record timer events**
+
+  * Output: log `timer_started`, `timer_expired`
+  * DoD: includes domain + timestamp + minutes
+
+* [ ] **Timebox QA checklist**
+
+  * Output: minimal manual QA list for timer flows
+  * DoD: expiry in active tab, inactive tab, multiple tabs
 
 ---
 

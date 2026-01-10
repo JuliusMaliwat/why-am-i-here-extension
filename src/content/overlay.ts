@@ -14,6 +14,8 @@ type ActiveIntention = {
   domain: string;
   intention: string;
   createdAt: number;
+  timerMinutes?: number;
+  timerEndsAt?: number;
 };
 
 type PillPosition = {
@@ -153,6 +155,19 @@ function applyPillPosition(pill: HTMLDivElement, position: PillPosition): void {
   }
 }
 
+function keepPillCenteredOnResize(
+  pill: HTMLDivElement,
+  position: PillPosition
+): () => void {
+  const onResize = (): void => {
+    if (position.mode !== "center") return;
+    position.x = window.innerWidth / 2;
+    applyPillPosition(pill, position);
+  };
+  window.addEventListener("resize", onResize);
+  return () => window.removeEventListener("resize", onResize);
+}
+
 function enableDragging(pill: HTMLDivElement, position: PillPosition): void {
   let startX = 0;
   let startY = 0;
@@ -204,10 +219,15 @@ function enableDragging(pill: HTMLDivElement, position: PillPosition): void {
 
 type OverlayMode = "gate" | "pill";
 
-function createOverlay(
-  mode: OverlayMode,
-  intentionText?: string
-): HTMLDivElement {
+type OverlayInit = {
+  mode: OverlayMode;
+  intentionText?: string;
+  timerEndsAt?: number;
+  timerMinutes?: number;
+};
+
+function createOverlay(init: OverlayInit): HTMLDivElement {
+  const { mode, intentionText, timerEndsAt } = init;
   const root = document.createElement("div");
   root.id = OVERLAY_ID;
   const shadow = root.attachShadow({ mode: "open" });
@@ -223,7 +243,7 @@ function createOverlay(
       align-items: flex-start;
       justify-content: center;
       background: rgba(18, 20, 22, 0.72);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(14px);
       z-index: 2147483646;
       font-family: "Avenir Next", "Futura", "Segoe UI", sans-serif;
       color: #f4f5f7;
@@ -235,14 +255,18 @@ function createOverlay(
       left: 50%;
       top: 64px;
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.92),
+        rgba(255, 255, 255, 0.82)
+      );
       color: #171a1d;
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.06);
       border-radius: 999px;
-      padding: 12px 18px;
+      padding: 14px 20px;
       min-width: 220px;
       max-width: 420px;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -271,11 +295,12 @@ function createOverlay(
       background: transparent;
       border: none;
       color: inherit;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
+      font-weight: 500;
       outline: none;
     }
     input::placeholder {
-      color: rgba(23, 26, 29, 0.45);
+      color: rgba(23, 26, 29, 0.42);
     }
     button {
       background: transparent;
@@ -295,15 +320,91 @@ function createOverlay(
       opacity: 1;
       pointer-events: auto;
     }
+    .timer-text {
+      font-size: 0.7rem;
+      color: rgba(23, 26, 29, 0.45);
+      white-space: nowrap;
+    }
     .error {
       position: absolute;
-      top: calc(100% + 10px);
+      top: calc(100% + 2.2rem);
       left: 50%;
       transform: translateX(-50%);
       color: #e7b3b3;
       font-size: 0.85rem;
       margin: 0;
       min-height: 1.1em;
+    }
+    .timebox-row {
+      position: absolute;
+      top: calc(100% + 0.45rem);
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: rgba(23, 26, 29, 0.7);
+      z-index: 2147483647;
+    }
+    .timebox-row.is-visible {
+      display: inline-flex;
+    }
+    .timebox-chip {
+      border: none;
+      background: rgba(255, 255, 255, 0.7);
+      color: rgba(23, 26, 29, 0.75);
+      font-size: 0.75rem;
+      padding: 0.35em 0.9em;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .timebox-chip.is-selected {
+      background: rgba(255, 255, 255, 1);
+      color: rgba(23, 26, 29, 0.95);
+      font-weight: 600;
+    }
+    .timebox-custom {
+      position: relative;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 6.5ch;
+    }
+    .timebox-custom .custom-label {
+      letter-spacing: 0.06em;
+      font-size: 0.7rem;
+    }
+    .timebox-custom .custom-edit {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25em;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .timebox-custom.is-editing .custom-label {
+      opacity: 0;
+    }
+    .timebox-custom.is-editing .custom-edit {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .timebox-custom input {
+      border: none;
+      background: transparent;
+      font-size: 0.75rem;
+      text-align: right;
+      outline: none;
+      width: 2ch;
+    }
+    .timebox-custom .custom-suffix {
+      font-size: 0.7rem;
+      color: rgba(23, 26, 29, 0.7);
     }
     .sizer {
       position: absolute;
@@ -336,6 +437,48 @@ function createOverlay(
   button.type = "submit";
   button.textContent = "Enter";
 
+  const timerText = document.createElement("span");
+  timerText.className = "timer-text";
+  timerText.style.display = "none";
+  const timeboxRow = document.createElement("div");
+  timeboxRow.className = "timebox-row";
+
+  const presetValues = [5, 10, 20];
+  const presetButtons = presetValues.map((value) => {
+    const preset = document.createElement("button");
+    preset.type = "button";
+    preset.className = "timebox-chip";
+    preset.textContent = `${value}M`;
+    preset.dataset.value = String(value);
+    return preset;
+  });
+
+  const customButton = document.createElement("button");
+  customButton.type = "button";
+  customButton.className = "timebox-chip timebox-custom";
+
+  const customLabel = document.createElement("span");
+  customLabel.className = "custom-label";
+  customLabel.textContent = "CUSTOM";
+
+  const customInput = document.createElement("input");
+  customInput.type = "text";
+  customInput.inputMode = "numeric";
+  customInput.setAttribute("pattern", "[0-9]*");
+  customInput.setAttribute("aria-label", "Custom minutes");
+  customInput.placeholder = "10";
+
+  const customSuffix = document.createElement("span");
+  customSuffix.className = "custom-suffix";
+  customSuffix.textContent = "M";
+
+  const customEdit = document.createElement("span");
+  customEdit.className = "custom-edit";
+  customEdit.append(customInput, customSuffix);
+
+  customButton.append(customLabel, customEdit);
+  timeboxRow.append(...presetButtons, customButton);
+
   const updateSizing = (): void => {
     const value = input.value.trim() || input.placeholder;
     sizer.textContent = value;
@@ -347,10 +490,162 @@ function createOverlay(
   const updateTypingState = (): void => {
     if (input.value.trim().length > 0) {
       pill.classList.add("is-typing");
+      timeboxRow.classList.add("is-visible");
     } else {
       pill.classList.remove("is-typing");
+      timeboxRow.classList.remove("is-visible");
+      setSelectedMinutes(null, "clear");
     }
   };
+
+  const position = loadPillPosition() ?? getDefaultPillPosition();
+
+  let countdownId: number | null = null;
+  let latestIntentionText = "";
+  if (intentionText) {
+    latestIntentionText = intentionText;
+  }
+
+  const stopCountdown = (): void => {
+    if (countdownId != null) {
+      window.clearInterval(countdownId);
+      countdownId = null;
+    }
+  };
+
+  const showGate = (minutes?: number): void => {
+    position.mode = "center";
+    position.x = window.innerWidth / 2;
+    applyPillPosition(pill, position);
+
+    overlay.style.display = "";
+    error.style.display = "";
+    pill.classList.remove("is-pill");
+    pill.classList.add("is-gate");
+    input.readOnly = false;
+    input.value = latestIntentionText;
+    input.focus();
+    timerText.textContent = "";
+    timerText.style.display = "none";
+    updateTypingState();
+    lockScroll();
+    if (latestIntentionText) {
+      void sendMessage({
+        type: "timer_expired",
+        payload: {
+          domain: normalizeHostname(window.location.hostname) || "",
+          timestamp: Date.now(),
+          minutes
+        }
+      });
+    }
+  };
+
+  const startCountdown = (
+    endsAt: number | null | undefined,
+    minutes?: number
+  ): void => {
+    if (!endsAt) {
+      timerText.textContent = "";
+      timerText.style.display = "none";
+      return;
+    }
+
+    timerText.style.display = "inline";
+
+    const update = (): void => {
+      const remainingMs = endsAt - Date.now();
+      const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+      const mins = Math.floor(remainingSec / 60);
+      const secs = remainingSec % 60;
+      timerText.textContent = `${mins}m ${secs}s`;
+      if (remainingMs <= 0) {
+        stopCountdown();
+        timerText.textContent = "";
+        timerText.style.display = "none";
+        showGate(minutes);
+      }
+    };
+
+    update();
+    stopCountdown();
+    countdownId = window.setInterval(update, 1000);
+  };
+
+  let selectedMinutes: number | null = null;
+
+  const syncMinutes = (): void => {
+    if (selectedMinutes == null) {
+      form.dataset.timerMinutes = "";
+    } else {
+      form.dataset.timerMinutes = String(selectedMinutes);
+    }
+  };
+
+  const setSelectedMinutes = (
+    value: number | null,
+    source: "preset" | "custom" | "clear"
+  ): void => {
+    const toggled =
+      source !== "clear" &&
+      value != null &&
+      selectedMinutes != null &&
+      value === selectedMinutes;
+
+    selectedMinutes = toggled ? null : value;
+
+    presetButtons.forEach((preset) => {
+      const presetValue = Number(preset.dataset.value || 0);
+      if (selectedMinutes != null && presetValue === selectedMinutes) {
+        preset.classList.add("is-selected");
+      } else {
+        preset.classList.remove("is-selected");
+      }
+    });
+
+    if (source === "custom") {
+      customButton.classList.add("is-selected");
+      customButton.classList.add("is-editing");
+    } else if (selectedMinutes == null) {
+      customButton.classList.remove("is-selected");
+      customButton.classList.remove("is-editing");
+      customInput.value = "";
+    } else {
+      customButton.classList.remove("is-selected");
+      customButton.classList.remove("is-editing");
+      customInput.value = "";
+    }
+
+    syncMinutes();
+  };
+
+  presetButtons.forEach((preset) => {
+    preset.addEventListener("click", () => {
+      const value = Number(preset.dataset.value || 0);
+      setSelectedMinutes(value, "preset");
+    });
+  });
+
+  customButton.addEventListener("click", () => {
+    customButton.classList.add("is-selected");
+    customButton.classList.add("is-editing");
+    setSelectedMinutes(null, "custom");
+    customInput.focus();
+  });
+
+  customInput.addEventListener("input", () => {
+    const raw = customInput.value.replace(/\D/g, "");
+    customInput.value = raw;
+    if (!raw) {
+      setSelectedMinutes(null, "custom");
+      return;
+    }
+    const value = clamp(Number(raw), 1, 60);
+    if (Number(raw) !== value) {
+      customInput.value = String(value);
+    }
+    setSelectedMinutes(value, "custom");
+  });
 
   let hasDrag = false;
   if (mode === "gate") {
@@ -358,6 +653,10 @@ function createOverlay(
       updateTypingState();
       updateSizing();
     });
+    if (intentionText) {
+      input.value = intentionText;
+    }
+    updateTypingState();
     activeOverlayInput = input;
     setTimeout(() => {
       input.focus();
@@ -382,29 +681,42 @@ function createOverlay(
       }
 
       const timestamp = Date.now();
+      const minutes = Number(form.dataset.timerMinutes || 0);
+      const endsAt =
+        minutes > 0 ? timestamp + minutes * 60 * 1000 : undefined;
+
       const activeIntention = {
         domain: hostname,
         intention,
-        createdAt: timestamp
+        createdAt: timestamp,
+        timerMinutes: minutes > 0 ? minutes : undefined,
+        timerEndsAt: endsAt
       };
 
       setActiveIntention(activeIntention);
 
       void sendMessage({
         type: "intention_submitted",
-        payload: { domain: hostname, intention, timestamp }
+        payload: {
+          domain: hostname,
+          intention,
+          timestamp,
+          timerMinutes: minutes > 0 ? minutes : undefined
+        }
       });
 
-      overlay.remove();
-      error.remove();
+      overlay.style.display = "none";
+      error.style.display = "none";
+      timeboxRow.classList.remove("is-visible");
       input.value = intention;
+      latestIntentionText = intention;
       input.readOnly = true;
       input.blur();
-      button.remove();
       pill.classList.remove("is-typing");
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
       updateSizing();
+      startCountdown(endsAt, minutes > 0 ? minutes : undefined);
 
       if (!hasDrag) {
         enableDragging(pill, position);
@@ -417,27 +729,29 @@ function createOverlay(
     });
   } else {
     input.value = intentionText ?? "";
+    latestIntentionText = intentionText ?? "";
     input.readOnly = true;
     input.setAttribute("aria-readonly", "true");
     button.remove();
     error.remove();
     pill.classList.remove("is-typing");
+    startCountdown(timerEndsAt, init.timerMinutes);
   }
 
   updateSizing();
 
   if (mode === "gate") {
     form.append(input, button);
-    pill.append(form, error);
+    pill.append(form, timerText, error, timeboxRow);
     shadow.append(style, sizer, overlay, pill);
   } else {
     form.append(input);
-    pill.append(form);
+    pill.append(form, timerText);
     shadow.append(style, sizer, pill);
   }
 
-  const position = loadPillPosition() ?? getDefaultPillPosition();
   applyPillPosition(pill, position);
+  const cleanupResize = keepPillCenteredOnResize(pill, position);
   if (mode === "pill") {
     enableDragging(pill, position);
     savePillPosition(position);
@@ -462,8 +776,34 @@ export async function mountOverlay(): Promise<void> {
   const backgroundIntention = await getActiveIntentionFromBackground(hostname);
   const existingIntention = backgroundIntention ?? getActiveIntention(hostname);
   if (existingIntention) {
+    if (
+      existingIntention.timerEndsAt &&
+      existingIntention.timerEndsAt <= Date.now()
+    ) {
+      void sendMessage({
+        type: "timer_expired",
+        payload: {
+          domain: hostname,
+          timestamp: Date.now(),
+          minutes: existingIntention.timerMinutes
+        }
+      });
+      lockScroll();
+      document.documentElement.appendChild(
+        createOverlay({
+          mode: "gate",
+          intentionText: existingIntention.intention
+        })
+      );
+      return;
+    }
     document.documentElement.appendChild(
-      createOverlay("pill", existingIntention.intention)
+      createOverlay({
+        mode: "pill",
+        intentionText: existingIntention.intention,
+        timerEndsAt: existingIntention.timerEndsAt,
+        timerMinutes: existingIntention.timerMinutes
+      })
     );
     return;
   }
@@ -474,5 +814,5 @@ export async function mountOverlay(): Promise<void> {
     payload: { domain: hostname, timestamp: Date.now() }
   });
 
-  document.documentElement.appendChild(createOverlay("gate"));
+  document.documentElement.appendChild(createOverlay({ mode: "gate" }));
 }

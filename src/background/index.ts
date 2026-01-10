@@ -24,6 +24,9 @@ chrome.runtime.onMessage.addListener(
         }
         case "intention_submitted": {
           if (tabId == null) return;
+          const minutes = message.payload.timerMinutes ?? 0;
+          const endsAt =
+            minutes > 0 ? message.payload.timestamp + minutes * 60 * 1000 : null;
           await appendEvent({
             type: "intention_submitted",
             domain: message.payload.domain,
@@ -31,11 +34,23 @@ chrome.runtime.onMessage.addListener(
             intention: message.payload.intention,
             tabId
           });
+          if (minutes > 0) {
+            await appendEvent({
+              type: "timer_started",
+              domain: message.payload.domain,
+              timestamp: message.payload.timestamp,
+              intention: message.payload.intention,
+              tabId,
+              minutes
+            });
+          }
           await setActiveIntention(tabId, {
             domain: message.payload.domain,
             intention: message.payload.intention,
             createdAt: message.payload.timestamp,
-            tabId
+            tabId,
+            timerMinutes: minutes > 0 ? minutes : undefined,
+            timerEndsAt: endsAt ?? undefined
           });
           return;
         }
@@ -46,6 +61,18 @@ chrome.runtime.onMessage.addListener(
           }
           const activeIntention = await getActiveIntention(tabId);
           sendResponse({ activeIntention } as RuntimeResponse);
+          return;
+        }
+        case "timer_expired": {
+          if (tabId == null) return;
+          const minutes = message.payload.minutes ?? 0;
+          await appendEvent({
+            type: "timer_expired",
+            domain: message.payload.domain,
+            timestamp: message.payload.timestamp,
+            tabId,
+            minutes: minutes > 0 ? minutes : undefined
+          });
           return;
         }
         default:
