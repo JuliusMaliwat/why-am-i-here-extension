@@ -297,13 +297,84 @@ function createOverlay(
     }
     .error {
       position: absolute;
-      top: calc(100% + 10px);
+      top: calc(100% + 2.2rem);
       left: 50%;
       transform: translateX(-50%);
       color: #e7b3b3;
       font-size: 0.85rem;
       margin: 0;
       min-height: 1.1em;
+    }
+    .timebox-row {
+      position: absolute;
+      top: calc(100% + 0.45rem);
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: rgba(23, 26, 29, 0.7);
+      z-index: 2147483647;
+    }
+    .timebox-row.is-visible {
+      display: inline-flex;
+    }
+    .timebox-chip {
+      border: none;
+      background: rgba(255, 255, 255, 0.7);
+      color: rgba(23, 26, 29, 0.75);
+      font-size: 0.75rem;
+      padding: 0.35em 0.9em;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .timebox-chip.is-selected {
+      background: rgba(255, 255, 255, 1);
+      color: rgba(23, 26, 29, 0.95);
+      font-weight: 600;
+    }
+    .timebox-custom {
+      position: relative;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 6.5ch;
+    }
+    .timebox-custom .custom-label {
+      letter-spacing: 0.06em;
+      font-size: 0.7rem;
+    }
+    .timebox-custom .custom-edit {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25em;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .timebox-custom.is-editing .custom-label {
+      opacity: 0;
+    }
+    .timebox-custom.is-editing .custom-edit {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .timebox-custom input {
+      border: none;
+      background: transparent;
+      font-size: 0.75rem;
+      text-align: right;
+      outline: none;
+      width: 2ch;
+    }
+    .timebox-custom .custom-suffix {
+      font-size: 0.7rem;
+      color: rgba(23, 26, 29, 0.7);
     }
     .sizer {
       position: absolute;
@@ -336,6 +407,45 @@ function createOverlay(
   button.type = "submit";
   button.textContent = "Enter";
 
+  const timeboxRow = document.createElement("div");
+  timeboxRow.className = "timebox-row";
+
+  const presetValues = [5, 10, 20];
+  const presetButtons = presetValues.map((value) => {
+    const preset = document.createElement("button");
+    preset.type = "button";
+    preset.className = "timebox-chip";
+    preset.textContent = `${value}M`;
+    preset.dataset.value = String(value);
+    return preset;
+  });
+
+  const customButton = document.createElement("button");
+  customButton.type = "button";
+  customButton.className = "timebox-chip timebox-custom";
+
+  const customLabel = document.createElement("span");
+  customLabel.className = "custom-label";
+  customLabel.textContent = "CUSTOM";
+
+  const customInput = document.createElement("input");
+  customInput.type = "text";
+  customInput.inputMode = "numeric";
+  customInput.setAttribute("pattern", "[0-9]*");
+  customInput.setAttribute("aria-label", "Custom minutes");
+  customInput.placeholder = "10";
+
+  const customSuffix = document.createElement("span");
+  customSuffix.className = "custom-suffix";
+  customSuffix.textContent = "M";
+
+  const customEdit = document.createElement("span");
+  customEdit.className = "custom-edit";
+  customEdit.append(customInput, customSuffix);
+
+  customButton.append(customLabel, customEdit);
+  timeboxRow.append(...presetButtons, customButton);
+
   const updateSizing = (): void => {
     const value = input.value.trim() || input.placeholder;
     sizer.textContent = value;
@@ -347,10 +457,88 @@ function createOverlay(
   const updateTypingState = (): void => {
     if (input.value.trim().length > 0) {
       pill.classList.add("is-typing");
+      timeboxRow.classList.add("is-visible");
     } else {
       pill.classList.remove("is-typing");
+      timeboxRow.classList.remove("is-visible");
+      setSelectedMinutes(null, "clear");
     }
   };
+
+  let selectedMinutes: number | null = null;
+
+  const syncMinutes = (): void => {
+    if (selectedMinutes == null) {
+      form.dataset.timerMinutes = "";
+    } else {
+      form.dataset.timerMinutes = String(selectedMinutes);
+    }
+  };
+
+  const setSelectedMinutes = (
+    value: number | null,
+    source: "preset" | "custom" | "clear"
+  ): void => {
+    const toggled =
+      source !== "clear" &&
+      value != null &&
+      selectedMinutes != null &&
+      value === selectedMinutes;
+
+    selectedMinutes = toggled ? null : value;
+
+    presetButtons.forEach((preset) => {
+      const presetValue = Number(preset.dataset.value || 0);
+      if (selectedMinutes != null && presetValue === selectedMinutes) {
+        preset.classList.add("is-selected");
+      } else {
+        preset.classList.remove("is-selected");
+      }
+    });
+
+    if (source === "custom") {
+      customButton.classList.add("is-selected");
+      customButton.classList.add("is-editing");
+    } else if (selectedMinutes == null) {
+      customButton.classList.remove("is-selected");
+      customButton.classList.remove("is-editing");
+      customInput.value = "";
+    } else {
+      customButton.classList.remove("is-selected");
+      customButton.classList.remove("is-editing");
+      customInput.value = "";
+    }
+
+    syncMinutes();
+  };
+
+  presetButtons.forEach((preset) => {
+    preset.addEventListener("click", () => {
+      const value = Number(preset.dataset.value || 0);
+      setSelectedMinutes(value, "preset");
+    });
+  });
+
+  customButton.addEventListener("click", () => {
+    customButton.classList.add("is-selected");
+    customButton.classList.add("is-editing");
+    setSelectedMinutes(null, "custom");
+    customInput.focus();
+  });
+
+  customInput.addEventListener("input", () => {
+    const raw = customInput.value.replace(/\D/g, "");
+    customInput.value = raw;
+    if (!raw) {
+      setSelectedMinutes(null, "custom");
+      return;
+    }
+    const value = clamp(Number(raw), 1, 60);
+    if (Number(raw) !== value) {
+      customInput.value = String(value);
+    }
+    setSelectedMinutes(value, "custom");
+  });
 
   let hasDrag = false;
   if (mode === "gate") {
@@ -397,6 +585,7 @@ function createOverlay(
 
       overlay.remove();
       error.remove();
+      timeboxRow.remove();
       input.value = intention;
       input.readOnly = true;
       input.blur();
@@ -426,11 +615,11 @@ function createOverlay(
 
   updateSizing();
 
-  if (mode === "gate") {
-    form.append(input, button);
-    pill.append(form, error);
-    shadow.append(style, sizer, overlay, pill);
-  } else {
+    if (mode === "gate") {
+      form.append(input, button);
+      pill.append(form, error, timeboxRow);
+      shadow.append(style, sizer, overlay, pill);
+    } else {
     form.append(input);
     pill.append(form);
     shadow.append(style, sizer, pill);
