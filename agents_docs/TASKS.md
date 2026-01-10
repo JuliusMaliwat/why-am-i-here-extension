@@ -81,7 +81,7 @@
 
 (Do not start until MVP is stable.)
 
-* [ ] **Timebox UI (presets + optional custom)**
+* [x] **Timebox UI (presets + optional custom)**
 
   * Output: timebox row appears after typing starts
   * DoD: presets 5/10/20 + custom 1–60 + 

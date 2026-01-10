@@ -153,6 +153,19 @@ function applyPillPosition(pill: HTMLDivElement, position: PillPosition): void {
   }
 }
 
+function keepPillCenteredOnResize(
+  pill: HTMLDivElement,
+  position: PillPosition
+): () => void {
+  const onResize = (): void => {
+    if (position.mode !== "center") return;
+    position.x = window.innerWidth / 2;
+    applyPillPosition(pill, position);
+  };
+  window.addEventListener("resize", onResize);
+  return () => window.removeEventListener("resize", onResize);
+}
+
 function enableDragging(pill: HTMLDivElement, position: PillPosition): void {
   let startX = 0;
   let startY = 0;
@@ -627,6 +640,7 @@ function createOverlay(
 
   const position = loadPillPosition() ?? getDefaultPillPosition();
   applyPillPosition(pill, position);
+  const cleanupResize = keepPillCenteredOnResize(pill, position);
   if (mode === "pill") {
     enableDragging(pill, position);
     savePillPosition(position);
