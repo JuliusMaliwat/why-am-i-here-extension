@@ -131,6 +131,8 @@ Users often open distracting sites reflexively and lose time without a goal. Har
 
 See `docs/ANALYTICS_V0.md` and `docs/ANALYTICS_V1.md` for the staged insights plan.
 
+Delivery note: Insights will be a separate page, linked from the Options UI.
+
 ---
 
 ## 11) Data & Privacy Principles

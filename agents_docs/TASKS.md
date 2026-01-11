@@ -155,6 +155,11 @@
   * Output: flag low-quality intentions (secondary signal)
   * DoD: length < 8, low letter ratio, excessive repeats
 
+* [ ] **Insights page entry (Options link)**
+
+  * Output: visible entry point from Options UI
+  * DoD: links to separate Insights page
+
 ---
 
 ## Task Prompt Template (for AI agents)
