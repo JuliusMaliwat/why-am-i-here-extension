@@ -27,6 +27,11 @@ Per domain, per day (or week):
   - `overlay_shown`
   - `intention_submitted`
 
+## UI: Hourly View (v0)
+- Toggle to switch to hourly granularity.
+- Range: last 24h (optional last 7d).
+- Suggested visual: heatmap or hourly bars.
+
 ## Intentions List (Top)
 - For each domain, show top 5 intentions.
 - Normalize only by:
@@ -43,4 +48,3 @@ Per domain, per day (or week):
 - Time spent tracking.
 - NLP “nonsense” detection.
 - Wordcloud.
-

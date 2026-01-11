@@ -126,6 +126,11 @@
   * Output: multi-select domain trend chart (7/30/90 days)
   * DoD: shows opens proxy + intentions submitted
 
+* [ ] **Insights v0: hourly trend toggle**
+
+  * Output: optional hourly view for last 24h (and/or last 7d)
+  * DoD: hourly chart (bar or heatmap) per selected domains
+
 * [ ] **Insights v0: no-intention rate**
 
   * Output: percentage of opens without submission per domain
