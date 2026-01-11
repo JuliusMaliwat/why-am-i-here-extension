@@ -120,7 +120,7 @@
   * Output: helpers to aggregate per-domain daily counts
   * DoD: uses `overlay_shown` + `intention_submitted` events only
 
-* [ ] **Insights v0: domain trend chart UI**
+* [x] **Insights v0: domain trend chart UI**
 
   * Output: multi-select domain trend chart (7/30/90 days)
   * DoD: shows opens proxy + intentions submitted

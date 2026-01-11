@@ -1,0 +1,209 @@
+:root {
+  color-scheme: dark;
+  --bg-0: #101213;
+  --bg-1: #171a1d;
+  --bg-2: #1f2327;
+  --card: #1b1f23;
+  --card-strong: #23282d;
+  --text-0: #f2f4f5;
+  --text-1: #c8cdd2;
+  --text-2: #9aa1a8;
+  --accent: #cdb38a;
+  --accent-strong: #e7c595;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  --radius: 18px;
+  font-family: "Avenir Next", "Futura", "Gill Sans", "Trebuchet MS",
+    "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(1200px 800px at 10% -10%, #2b2f34, transparent),
+    radial-gradient(900px 700px at 90% 10%, #2c2a26, transparent),
+    linear-gradient(160deg, var(--bg-0), var(--bg-1));
+  color: var(--text-0);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.insights-app {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 64px 32px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.insights-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-2);
+  font-size: 0.7rem;
+  margin: 0 0 8px;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 3vw, 3rem);
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.subcopy {
+  color: var(--text-1);
+  max-width: 520px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.panel {
+  background: linear-gradient(160deg, var(--card), var(--card-strong));
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.panel-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+}
+
+.panel-copy {
+  margin: 0;
+  color: var(--text-2);
+}
+
+.range-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.range-toggle button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-1);
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.range-toggle button.active {
+  background: rgba(231, 197, 149, 0.2);
+  color: var(--accent-strong);
+}
+
+.status {
+  margin: 16px 0 0;
+  color: var(--text-2);
+}
+
+.empty {
+  margin: 18px 0 0;
+  color: var(--text-2);
+}
+
+.domain-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.domain-filter button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-1);
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.domain-filter button.active {
+  background: rgba(231, 197, 149, 0.2);
+  color: var(--accent-strong);
+}
+
+.chart-wrap {
+  margin-top: 22px;
+  background: rgba(15, 17, 19, 0.6);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+svg {
+  width: 100%;
+  height: 220px;
+}
+
+.line {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.line.overlay {
+  stroke: rgba(231, 197, 149, 0.9);
+}
+
+.line.intentions {
+  stroke: rgba(141, 196, 255, 0.8);
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  color: var(--text-2);
+  font-size: 0.8rem;
+}
+
+.legend-item::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.legend-item.overlay::before {
+  background: rgba(231, 197, 149, 0.9);
+}
+
+.legend-item.intentions::before {
+  background: rgba(141, 196, 255, 0.8);
+}
+
+@media (max-width: 720px) {
+  .insights-app {
+    padding: 48px 20px 80px;
+  }
+
+  .panel-header {
+    align-items: flex-start;
+  }
+}
