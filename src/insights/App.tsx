@@ -155,6 +155,11 @@ export function App(): JSX.Element {
             Track your patterns across the domains you choose.
           </p>
         </div>
+        <div className="insights-nav">
+          <a className="back-link" href="/options.html">
+            Back to Options
+          </a>
+        </div>
       </header>
 
       <section className="panel">

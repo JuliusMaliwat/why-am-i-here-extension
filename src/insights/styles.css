@@ -49,6 +49,21 @@ body {
   gap: 24px;
 }
 
+.insights-nav {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.back-link {
+  text-decoration: none;
+  color: var(--accent-strong);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(231, 197, 149, 0.35);
+  background: rgba(231, 197, 149, 0.08);
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.18em;
