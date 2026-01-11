@@ -5,6 +5,7 @@ import {
 } from "../shared/analytics";
 import { getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
+import type { DailyDomainCounts } from "../shared/analytics";
 
 type RangeOption = 7 | 30 | 90;
 type ViewMode = "daily" | "hourly";
@@ -170,6 +171,27 @@ export function App(): JSX.Element {
     }
     return buildSeries(dailyByDomain, selectedDomains, range);
   }, [dailyByDomain, hourlyByDomain, selectedDomains, range, view]);
+
+  const noIntentionRates = useMemo(() => {
+    return selectedDomains.map((domain) => {
+      const days = dailyByDomain[domain] ?? [];
+      const rangeDays = buildDateKeys(range).slice(-range);
+      const lookup = new Map<string, DailyDomainCounts>();
+      days.forEach((day) => lookup.set(day.date, day));
+      let overlayShown = 0;
+      let intentionSubmitted = 0;
+      rangeDays.forEach((date) => {
+        const day = lookup.get(date);
+        if (!day) return;
+        overlayShown += day.overlayShown;
+        intentionSubmitted += day.intentionSubmitted;
+      });
+      const noIntention = Math.max(0, overlayShown - intentionSubmitted);
+      const rate =
+        overlayShown > 0 ? Math.round((noIntention / overlayShown) * 100) : 0;
+      return { domain, rate, overlayShown, noIntention };
+    });
+  }, [dailyByDomain, selectedDomains, range]);
 
   const maxValue = useMemo(() => {
     return Math.max(
@@ -353,6 +375,23 @@ export function App(): JSX.Element {
                   <span className="legend-item intentions">
                     Intentions submitted
                   </span>
+                </div>
+              </div>
+            )}
+
+            {view === "daily" && selectedDomains.length > 0 && (
+              <div className="no-intention">
+                <h3>No-intention rate</h3>
+                <div className="rate-grid">
+                  {noIntentionRates.map((row) => (
+                    <div key={row.domain} className="rate-card">
+                      <p className="rate-domain">{row.domain}</p>
+                      <p className="rate-value">{row.rate}%</p>
+                      <p className="rate-detail">
+                        {row.noIntention} / {row.overlayShown} opens
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

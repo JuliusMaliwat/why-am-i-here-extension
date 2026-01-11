@@ -140,7 +140,7 @@
   * Output: optional hourly view for last 24h (and/or last 7d)
   * DoD: hourly chart (bar or heatmap) per selected domains
 
-* [ ] **Insights v0: no-intention rate**
+* [x] **Insights v0: no-intention rate**
 
   * Output: percentage of opens without submission per domain
   * DoD: formula = (overlay_shown - intention_submitted) / overlay_shown
