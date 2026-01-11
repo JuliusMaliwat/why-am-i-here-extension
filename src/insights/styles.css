@@ -113,14 +113,26 @@ h1 {
 
 .range-toggle {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mode-toggle,
+.range-buttons {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .range-toggle button {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-1);
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
 }
@@ -148,10 +160,10 @@ h1 {
 }
 
 .domain-filter button {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-1);
-  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-2);
+  padding: 5px 10px;
   border-radius: 999px;
   cursor: pointer;
 }
@@ -159,6 +171,7 @@ h1 {
 .domain-filter button.active {
   background: rgba(231, 197, 149, 0.2);
   color: var(--accent-strong);
+  border-color: rgba(231, 197, 149, 0.35);
 }
 
 .chart-wrap {
@@ -229,6 +242,12 @@ svg {
   margin: 0 0 12px;
   font-size: 1rem;
   color: var(--text-1);
+}
+
+.range-note {
+  margin: -6px 0 16px;
+  color: var(--text-2);
+  font-size: 0.8rem;
 }
 
 .rate-grid {

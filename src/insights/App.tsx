@@ -312,22 +312,24 @@ export function App(): JSX.Element {
             </p>
           </div>
           <div className="range-toggle">
-            <button
-              type="button"
-              className={view === "daily" ? "active" : ""}
-              onClick={() => setView("daily")}
-            >
-              Daily
-            </button>
-            <button
-              type="button"
-              className={view === "hourly" ? "active" : ""}
-              onClick={() => setView("hourly")}
-            >
-              Hourly
-            </button>
+            <div className="mode-toggle">
+              <button
+                type="button"
+                className={view === "daily" ? "active" : ""}
+                onClick={() => setView("daily")}
+              >
+                Daily
+              </button>
+              <button
+                type="button"
+                className={view === "hourly" ? "active" : ""}
+                onClick={() => setView("hourly")}
+              >
+                Hourly
+              </button>
+            </div>
             {view === "daily" && (
-              <>
+              <div className="range-buttons">
                 {[7, 30, 90].map((value) => (
                   <button
                     key={value}
@@ -338,7 +340,7 @@ export function App(): JSX.Element {
                     {value}d
                   </button>
                 ))}
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -382,6 +384,7 @@ export function App(): JSX.Element {
             {view === "daily" && selectedDomains.length > 0 && (
               <div className="no-intention">
                 <h3>No-intention rate</h3>
+                <p className="range-note">Last {range} days</p>
                 <div className="rate-grid">
                   {noIntentionRates.map((row) => (
                     <div key={row.domain} className="rate-card">
