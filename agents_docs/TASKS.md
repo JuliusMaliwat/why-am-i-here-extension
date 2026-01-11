@@ -115,9 +115,12 @@
 
 ## Milestone 3 — Bonus Insights
 
-* [ ] **Insights page skeleton**
-* [ ] **Aggregate per-domain counts**
-* [ ] **Show: opens proxy, submitted intentions, no-intention sessions**
+* [ ] **Insights v0: domain trend chart**
+* [ ] **Insights v0: top intentions list**
+* [ ] **Insights v0: no‑intention rate**
+
+* [ ] **Insights v1: time spent (active)**
+* [ ] **Insights v1: suspect intention heuristic**
 
 ---
 

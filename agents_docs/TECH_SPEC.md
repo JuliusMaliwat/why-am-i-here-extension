@@ -90,6 +90,8 @@ A separate extension page that reads the Usage Store and aggregates:
 * intentions submitted
 * (future) timer expirations
 
+See `docs/ANALYTICS_V0.md` and `docs/ANALYTICS_V1.md` for staged analytics scope.
+
 ## 3) Data Model (Conceptual)
 
 ### Config
