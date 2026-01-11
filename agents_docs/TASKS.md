@@ -125,6 +125,11 @@
   * Output: multi-select domain trend chart (7/30/90 days)
   * DoD: shows opens proxy + intentions submitted
 
+* [ ] **Insights page entry (Options link)**
+
+  * Output: visible entry point from Options UI
+  * DoD: links to separate Insights page
+
 * [ ] **Insights v0: hourly trend toggle**
 
   * Output: optional hourly view for last 24h (and/or last 7d)
@@ -155,10 +160,6 @@
   * Output: flag low-quality intentions (secondary signal)
   * DoD: length < 8, low letter ratio, excessive repeats
 
-* [ ] **Insights page entry (Options link)**
-
-  * Output: visible entry point from Options UI
-  * DoD: links to separate Insights page
 
 ---
 
