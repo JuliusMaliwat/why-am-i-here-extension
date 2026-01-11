@@ -115,8 +115,7 @@
 
 ## Milestone 3 — Bonus Insights
 
-* [ ] **Insights v0: domain trend chart**
-* [ ] **Insights v0: data aggregation helpers**
+* [x] **Insights v0: data aggregation helpers**
 
   * Output: helpers to aggregate per-domain daily counts
   * DoD: uses `overlay_shown` + `intention_submitted` events only
