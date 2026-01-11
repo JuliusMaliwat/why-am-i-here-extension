@@ -116,11 +116,40 @@
 ## Milestone 3 — Bonus Insights
 
 * [ ] **Insights v0: domain trend chart**
-* [ ] **Insights v0: top intentions list**
-* [ ] **Insights v0: no‑intention rate**
+* [ ] **Insights v0: data aggregation helpers**
 
-* [ ] **Insights v1: time spent (active)**
+  * Output: helpers to aggregate per-domain daily counts
+  * DoD: uses `overlay_shown` + `intention_submitted` events only
+
+* [ ] **Insights v0: domain trend chart UI**
+
+  * Output: multi-select domain trend chart (7/30/90 days)
+  * DoD: shows opens proxy + intentions submitted
+
+* [ ] **Insights v0: no-intention rate**
+
+  * Output: percentage of opens without submission per domain
+  * DoD: formula = (overlay_shown - intention_submitted) / overlay_shown
+
+* [ ] **Insights v0: top intentions list**
+
+  * Output: top 5 intentions per domain
+  * DoD: normalized by lowercase + trim + collapsed spaces
+
+* [ ] **Insights v1: active time tracking**
+
+  * Output: active seconds per domain/session
+  * DoD: pause on tab inactive; resume on focus
+
+* [ ] **Insights v1: time spent chart**
+
+  * Output: per-domain time spent series
+  * DoD: uses active seconds aggregation
+
 * [ ] **Insights v1: suspect intention heuristic**
+
+  * Output: flag low-quality intentions (secondary signal)
+  * DoD: length < 8, low letter ratio, excessive repeats
 
 ---
 
