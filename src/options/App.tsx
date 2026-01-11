@@ -140,7 +140,12 @@ export function App(): JSX.Element {
             Pick the places where you want a gentle intention check.
           </p>
         </div>
-        <div className="count-pill">{domainCountLabel}</div>
+        <div className="hero-actions">
+          <a className="insights-link" href="/insights.html">
+            Insights
+          </a>
+          <div className="count-pill">{domainCountLabel}</div>
+        </div>
       </div>
 
       <section className="panel">

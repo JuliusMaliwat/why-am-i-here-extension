@@ -50,6 +50,22 @@ body {
   gap: 24px;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.insights-link {
+  text-decoration: none;
+  color: var(--accent-strong);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(231, 197, 149, 0.35);
+  background: rgba(231, 197, 149, 0.08);
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -217,6 +233,11 @@ button.danger {
 @media (max-width: 720px) {
   .hero {
     flex-direction: column;
+  }
+
+  .hero-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .add-form {

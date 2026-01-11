@@ -125,7 +125,7 @@
   * Output: multi-select domain trend chart (7/30/90 days)
   * DoD: shows opens proxy + intentions submitted
 
-* [ ] **Insights page entry (Options link)**
+* [x] **Insights page entry (Options link)**
 
   * Output: visible entry point from Options UI
   * DoD: links to separate Insights page
