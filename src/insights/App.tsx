@@ -1,15 +1,40 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { aggregateDailyCountsByDomain } from "../shared/analytics";
+import {
+  aggregateDailyCountsByDomain,
+  aggregateHourlyCountsByDomain
+} from "../shared/analytics";
 import { getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 
 type RangeOption = 7 | 30 | 90;
+type ViewMode = "daily" | "hourly";
 
 type SeriesPoint = {
   date: string;
   overlayShown: number;
   intentionSubmitted: number;
 };
+
+type HourlyPoint = {
+  hour: string;
+  overlayShown: number;
+  intentionSubmitted: number;
+};
+
+function buildHourKeys(hours: number): string[] {
+  const now = new Date();
+  const keys: string[] = [];
+  for (let i = hours - 1; i >= 0; i -= 1) {
+    const date = new Date(now);
+    date.setHours(now.getHours() - i, 0, 0, 0);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hour = String(date.getHours()).padStart(2, "0");
+    keys.push(`${year}-${month}-${day} ${hour}:00`);
+  }
+  return keys;
+}
 
 function buildDateKeys(rangeDays: number): string[] {
   const today = new Date();
@@ -57,10 +82,43 @@ function buildSeries(
   });
 }
 
+function buildHourlySeries(
+  hourlyByDomain: ReturnType<typeof aggregateHourlyCountsByDomain>,
+  selectedDomains: string[],
+  hours: number
+): HourlyPoint[] {
+  const hourKeys = buildHourKeys(hours);
+  const domainMaps = selectedDomains.map((domain) => {
+    const hoursList = hourlyByDomain[domain] ?? [];
+    const map = new Map<string, HourlyPoint>();
+    hoursList.forEach((hour) => {
+      map.set(hour.hour, {
+        hour: hour.hour,
+        overlayShown: hour.overlayShown,
+        intentionSubmitted: hour.intentionSubmitted
+      });
+    });
+    return map;
+  });
+
+  return hourKeys.map((hourKey) => {
+    let overlayShown = 0;
+    let intentionSubmitted = 0;
+    domainMaps.forEach((map) => {
+      const hour = map.get(hourKey);
+      if (!hour) return;
+      overlayShown += hour.overlayShown;
+      intentionSubmitted += hour.intentionSubmitted;
+    });
+    return { hour: hourKey, overlayShown, intentionSubmitted };
+  });
+}
+
 export function App(): JSX.Element {
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [range, setRange] = useState<RangeOption>(30);
+  const [view, setView] = useState<ViewMode>("daily");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -89,6 +147,10 @@ export function App(): JSX.Element {
     () => aggregateDailyCountsByDomain(events),
     [events]
   );
+  const hourlyByDomain = useMemo(
+    () => aggregateHourlyCountsByDomain(events),
+    [events]
+  );
 
   const domains = useMemo(
     () => Object.keys(dailyByDomain).sort(),
@@ -102,10 +164,12 @@ export function App(): JSX.Element {
     }
   }, [domains, selectedDomains.length]);
 
-  const series = useMemo(
-    () => buildSeries(dailyByDomain, selectedDomains, range),
-    [dailyByDomain, selectedDomains, range]
-  );
+  const series = useMemo(() => {
+    if (view === "hourly") {
+      return buildHourlySeries(hourlyByDomain, selectedDomains, 24);
+    }
+    return buildSeries(dailyByDomain, selectedDomains, range);
+  }, [dailyByDomain, hourlyByDomain, selectedDomains, range, view]);
 
   const maxValue = useMemo(() => {
     return Math.max(
@@ -116,7 +180,9 @@ export function App(): JSX.Element {
     );
   }, [series]);
 
-  const linePoints = (key: keyof SeriesPoint): string => {
+  const linePoints = (
+    key: "overlayShown" | "intentionSubmitted"
+  ): string => {
     if (series.length <= 1) {
       return "";
     }
@@ -129,7 +195,7 @@ export function App(): JSX.Element {
     return series
       .map((point, index) => {
         const x = padX + (usableW * index) / (series.length - 1);
-        const value = point[key] as number;
+        const value = point[key];
         const y = padY + usableH * (1 - value / maxValue);
         return `${x},${y}`;
       })
@@ -143,6 +209,59 @@ export function App(): JSX.Element {
       }
       return [...prev, domain];
     });
+  };
+
+  const renderHourlyBars = (): JSX.Element => {
+    const width = 1000;
+    const height = 220;
+    const padX = 40;
+    const padY = 24;
+    const usableW = width - padX * 2;
+    const usableH = height - padY * 2;
+    const slot = usableW / series.length;
+    const barWidth = Math.min(14, slot * 0.6);
+    return (
+      <svg viewBox="0 0 1000 220" role="img">
+        {series.map((point, index) => {
+          const x = padX + index * slot + (slot - barWidth) / 2;
+          const overlayHeight = usableH * (point.overlayShown / maxValue);
+          const intentionHeight =
+            usableH * (point.intentionSubmitted / maxValue);
+          const overlayY = padY + (usableH - overlayHeight);
+          const intentionY = padY + (usableH - intentionHeight);
+          return (
+            <g key={point.hour}>
+              <rect
+                x={x}
+                y={overlayY}
+                width={barWidth}
+                height={overlayHeight}
+                className="bar overlay"
+              />
+              <rect
+                x={x}
+                y={intentionY}
+                width={barWidth}
+                height={intentionHeight}
+                className="bar intentions"
+              />
+            </g>
+          );
+        })}
+      </svg>
+    );
+  };
+
+  const renderDailyLines = (): JSX.Element => {
+    return (
+      <svg viewBox="0 0 1000 220" role="img">
+        <polyline className="line overlay" points={linePoints("overlayShown")} />
+        <polyline
+          className="line intentions"
+          points={linePoints("intentionSubmitted")}
+        />
+      </svg>
+    );
   };
 
   return (
@@ -171,16 +290,34 @@ export function App(): JSX.Element {
             </p>
           </div>
           <div className="range-toggle">
-            {[7, 30, 90].map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={range === value ? "active" : ""}
-                onClick={() => setRange(value as RangeOption)}
-              >
-                {value}d
-              </button>
-            ))}
+            <button
+              type="button"
+              className={view === "daily" ? "active" : ""}
+              onClick={() => setView("daily")}
+            >
+              Daily
+            </button>
+            <button
+              type="button"
+              className={view === "hourly" ? "active" : ""}
+              onClick={() => setView("hourly")}
+            >
+              Hourly
+            </button>
+            {view === "daily" && (
+              <>
+                {[7, 30, 90].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={range === value ? "active" : ""}
+                    onClick={() => setRange(value as RangeOption)}
+                  >
+                    {value}d
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         </div>
 
@@ -210,16 +347,7 @@ export function App(): JSX.Element {
               <p className="empty">Select at least one domain.</p>
             ) : (
               <div className="chart-wrap">
-                <svg viewBox="0 0 1000 220" role="img">
-                  <polyline
-                    className="line overlay"
-                    points={linePoints("overlayShown")}
-                  />
-                  <polyline
-                    className="line intentions"
-                    points={linePoints("intentionSubmitted")}
-                  />
-                </svg>
+                {view === "hourly" ? renderHourlyBars() : renderDailyLines()}
                 <div className="legend">
                   <span className="legend-item overlay">Opens (proxy)</span>
                   <span className="legend-item intentions">

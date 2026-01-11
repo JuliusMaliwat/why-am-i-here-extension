@@ -135,7 +135,7 @@
   * Output: visible navigation back to Options
   * DoD: link in Insights header returns to Options
 
-* [ ] **Insights v0: hourly trend toggle**
+* [x] **Insights v0: hourly trend toggle**
 
   * Output: optional hourly view for last 24h (and/or last 7d)
   * DoD: hourly chart (bar or heatmap) per selected domains
