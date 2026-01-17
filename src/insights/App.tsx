@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   aggregateDailyCountsByDomain,
   aggregateHourlyCountsByDomain
@@ -7,8 +7,8 @@ import { getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 import type { DailyDomainCounts } from "../shared/analytics";
 
-type RangeOption = 7 | 30 | 90;
-type ViewMode = "daily" | "hourly";
+type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
+type MetricOption = "opens" | "intentions" | "no_intention_rate";
 
 type SeriesPoint = {
   date: string;
@@ -118,8 +118,14 @@ function buildHourlySeries(
 export function App(): JSX.Element {
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
-  const [range, setRange] = useState<RangeOption>(30);
-  const [view, setView] = useState<ViewMode>("daily");
+  const [range, setRange] = useState<RangeOption>("30d");
+  const [metric, setMetric] = useState<MetricOption>("opens");
+  const [domainMenuOpen, setDomainMenuOpen] = useState(false);
+  const [metricMenuOpen, setMetricMenuOpen] = useState(false);
+  const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
+  const metricMenuRef = useRef<HTMLDivElement | null>(null);
+  const domainMenuRef = useRef<HTMLDivElement | null>(null);
+  const rangeMenuRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -165,22 +171,58 @@ export function App(): JSX.Element {
     }
   }, [domains, selectedDomains.length]);
 
+  const rangeOptions: { id: RangeOption; label: string }[] = [
+    { id: "24h", label: "Last 24 hours" },
+    { id: "7d", label: "Last 7 days" },
+    { id: "30d", label: "Last 30 days" },
+    { id: "3m", label: "Last 3 months" },
+    { id: "6m", label: "Last 6 months" },
+    { id: "12m", label: "Last 12 months" },
+    { id: "all", label: "All time" }
+  ];
+
+  const metricOptions: { id: MetricOption; label: string }[] = [
+    { id: "opens", label: "Opens (proxy)" },
+    { id: "intentions", label: "Intentions submitted" },
+    { id: "no_intention_rate", label: "No-intention rate" }
+  ];
+
+  const isHourlyRange = range === "24h";
+
+  const rangeDays = useMemo(() => {
+    if (range === "7d") return 7;
+    if (range === "30d") return 30;
+    if (range === "3m") return 90;
+    if (range === "6m") return 180;
+    if (range === "12m") return 365;
+    if (range === "all") {
+      if (events.length === 0) return 30;
+      const earliest = events.reduce((min, event) => {
+        return Math.min(min, event.timestamp);
+      }, events[0].timestamp);
+      const diffMs = Date.now() - earliest;
+      const diffDays = Math.max(1, Math.ceil(diffMs / 86400000));
+      return diffDays;
+    }
+    return 30;
+  }, [range, events]);
+
   const series = useMemo(() => {
-    if (view === "hourly") {
+    if (isHourlyRange) {
       return buildHourlySeries(hourlyByDomain, selectedDomains, 24);
     }
-    return buildSeries(dailyByDomain, selectedDomains, range);
-  }, [dailyByDomain, hourlyByDomain, selectedDomains, range, view]);
+    return buildSeries(dailyByDomain, selectedDomains, rangeDays);
+  }, [dailyByDomain, hourlyByDomain, selectedDomains, rangeDays, isHourlyRange]);
 
   const noIntentionRates = useMemo(() => {
     return selectedDomains.map((domain) => {
       const days = dailyByDomain[domain] ?? [];
-      const rangeDays = buildDateKeys(range).slice(-range);
+      const rangeDaysList = buildDateKeys(rangeDays).slice(-rangeDays);
       const lookup = new Map<string, DailyDomainCounts>();
       days.forEach((day) => lookup.set(day.date, day));
       let overlayShown = 0;
       let intentionSubmitted = 0;
-      rangeDays.forEach((date) => {
+      rangeDaysList.forEach((date) => {
         const day = lookup.get(date);
         if (!day) return;
         overlayShown += day.overlayShown;
@@ -191,20 +233,20 @@ export function App(): JSX.Element {
         overlayShown > 0 ? Math.round((noIntention / overlayShown) * 100) : 0;
       return { domain, rate, overlayShown, noIntention };
     });
-  }, [dailyByDomain, selectedDomains, range]);
+  }, [dailyByDomain, selectedDomains, rangeDays]);
 
   const maxValue = useMemo(() => {
-    return Math.max(
-      1,
-      ...series.map((point) =>
-        Math.max(point.overlayShown, point.intentionSubmitted)
-      )
-    );
-  }, [series]);
+    if (metric === "no_intention_rate") {
+      return 100;
+    }
+    const values = series.map((point) => {
+      if (metric === "opens") return point.overlayShown;
+      return point.intentionSubmitted;
+    });
+    return Math.max(1, ...values);
+  }, [series, metric]);
 
-  const linePoints = (
-    key: "overlayShown" | "intentionSubmitted"
-  ): string => {
+  const linePoints = (): string => {
     if (series.length <= 1) {
       return "";
     }
@@ -217,7 +259,17 @@ export function App(): JSX.Element {
     return series
       .map((point, index) => {
         const x = padX + (usableW * index) / (series.length - 1);
-        const value = point[key];
+        let value = point.overlayShown;
+        if (metric === "intentions") {
+          value = point.intentionSubmitted;
+        } else if (metric === "no_intention_rate") {
+          value =
+            point.overlayShown > 0
+              ? ((point.overlayShown - point.intentionSubmitted) /
+                  point.overlayShown) *
+                100
+              : 0;
+        }
         const y = padY + usableH * (1 - value / maxValue);
         return `${x},${y}`;
       })
@@ -246,26 +298,27 @@ export function App(): JSX.Element {
       <svg viewBox="0 0 1000 220" role="img">
         {series.map((point, index) => {
           const x = padX + index * slot + (slot - barWidth) / 2;
-          const overlayHeight = usableH * (point.overlayShown / maxValue);
-          const intentionHeight =
-            usableH * (point.intentionSubmitted / maxValue);
-          const overlayY = padY + (usableH - overlayHeight);
-          const intentionY = padY + (usableH - intentionHeight);
+          let value = point.overlayShown;
+          if (metric === "intentions") {
+            value = point.intentionSubmitted;
+          } else if (metric === "no_intention_rate") {
+            value =
+              point.overlayShown > 0
+                ? ((point.overlayShown - point.intentionSubmitted) /
+                    point.overlayShown) *
+                  100
+                : 0;
+          }
+          const barHeight = usableH * (value / maxValue);
+          const barY = padY + (usableH - barHeight);
           return (
             <g key={point.hour}>
               <rect
                 x={x}
-                y={overlayY}
+                y={barY}
                 width={barWidth}
-                height={overlayHeight}
-                className="bar overlay"
-              />
-              <rect
-                x={x}
-                y={intentionY}
-                width={barWidth}
-                height={intentionHeight}
-                className="bar intentions"
+                height={barHeight}
+                className={`bar ${metric}`}
               />
             </g>
           );
@@ -277,14 +330,51 @@ export function App(): JSX.Element {
   const renderDailyLines = (): JSX.Element => {
     return (
       <svg viewBox="0 0 1000 220" role="img">
-        <polyline className="line overlay" points={linePoints("overlayShown")} />
-        <polyline
-          className="line intentions"
-          points={linePoints("intentionSubmitted")}
-        />
+        <polyline className={`line ${metric}`} points={linePoints()} />
       </svg>
     );
   };
+
+  const metricLabel =
+    metricOptions.find((option) => option.id === metric)?.label ?? "Metric";
+
+  const rangeLabel =
+    rangeOptions.find((option) => option.id === range)?.label ?? "Time range";
+
+  const domainLabel =
+    domains.length > 0 && selectedDomains.length === domains.length
+      ? "All domains"
+      : "Custom selection";
+
+  const closeMenus = (): void => {
+    setDomainMenuOpen(false);
+    setMetricMenuOpen(false);
+    setRangeMenuOpen(false);
+  };
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent): void => {
+      const target = event.target as Node;
+      const containers = [metricMenuRef, domainMenuRef, rangeMenuRef];
+      const isInside = containers.some((ref) => ref.current?.contains(target));
+      if (!isInside) {
+        closeMenus();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        closeMenus();
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <main className="insights-app">
@@ -305,43 +395,130 @@ export function App(): JSX.Element {
 
       <section className="panel">
         <div className="panel-header">
-          <div>
-            <h2>Domain trend</h2>
-            <p className="panel-copy">
-              Opens (proxy) vs intentions submitted.
-            </p>
-          </div>
-          <div className="range-toggle">
-            <div className="mode-toggle">
-              <button
-                type="button"
-                className={view === "daily" ? "active" : ""}
-                onClick={() => setView("daily")}
-              >
-                Daily
-              </button>
-              <button
-                type="button"
-                className={view === "hourly" ? "active" : ""}
-                onClick={() => setView("hourly")}
-              >
-                Hourly
-              </button>
+          <div className="panel-left">
+            <div>
+              <h2>Domain trend</h2>
+              <p className="panel-copy">A focused view of your activity.</p>
             </div>
-            {view === "daily" && (
-              <div className="range-buttons">
-                {[7, 30, 90].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={range === value ? "active" : ""}
-                    onClick={() => setRange(value as RangeOption)}
+          </div>
+          <div className="panel-right">
+            <div className="control-group">
+              <span className="control-label">Metric</span>
+              <div className="dropdown" ref={metricMenuRef}>
+                <button
+                  type="button"
+                  className={`dropdown-button ${
+                    metricMenuOpen ? "open" : ""
+                  }`}
+                  onClick={() => {
+                    setMetricMenuOpen((open) => {
+                      const next = !open;
+                        setDomainMenuOpen(false);
+                        setRangeMenuOpen(false);
+                        return next;
+                      });
+                    }}
                   >
-                    {value}d
+                    {metricLabel}
                   </button>
-                ))}
+                  {metricMenuOpen && (
+                  <div className="dropdown-menu">
+                    {metricOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={
+                          option.id === metric ? "dropdown-item active" : "dropdown-item"
+                        }
+                        onClick={() => {
+                          setMetric(option.id);
+                          setMetricMenuOpen(false);
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            {!isLoading && domains.length > 0 && (
+              <div className="control-group">
+                <span className="control-label">Domains</span>
+                <div className="dropdown" ref={domainMenuRef}>
+                  <button
+                    type="button"
+                    className={`dropdown-button ${
+                      domainMenuOpen ? "open" : ""
+                    }`}
+                    onClick={() => {
+                      setDomainMenuOpen((open) => {
+                        const next = !open;
+                        setMetricMenuOpen(false);
+                        setRangeMenuOpen(false);
+                        return next;
+                      });
+                    }}
+                  >
+                    {domainLabel}
+                  </button>
+                  {domainMenuOpen && (
+                    <div className="dropdown-menu">
+                      {domains.map((domain) => (
+                        <label key={domain} className="dropdown-item">
+                          <input
+                            type="checkbox"
+                            checked={selectedDomains.includes(domain)}
+                            onChange={() => toggleDomain(domain)}
+                          />
+                          <span>{domain}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
+            <div className="control-group">
+              <span className="control-label">Time range</span>
+              <div className="dropdown" ref={rangeMenuRef}>
+                <button
+                  type="button"
+                  className={`dropdown-button ${
+                    rangeMenuOpen ? "open" : ""
+                  }`}
+                  onClick={() => {
+                    setRangeMenuOpen((open) => {
+                      const next = !open;
+                        setMetricMenuOpen(false);
+                        setDomainMenuOpen(false);
+                        return next;
+                      });
+                    }}
+                  >
+                    {rangeLabel}
+                  </button>
+                  {rangeMenuOpen && (
+                  <div className="dropdown-menu">
+                    {rangeOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={
+                          option.id === range ? "dropdown-item active" : "dropdown-item"
+                        }
+                        onClick={() => {
+                          setRange(option.id);
+                          setRangeMenuOpen(false);
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -354,37 +531,23 @@ export function App(): JSX.Element {
 
         {!isLoading && domains.length > 0 && (
           <>
-            <div className="domain-filter">
-              {domains.map((domain) => (
-                <button
-                  key={domain}
-                  type="button"
-                  className={selectedDomains.includes(domain) ? "active" : ""}
-                  onClick={() => toggleDomain(domain)}
-                >
-                  {domain}
-                </button>
-              ))}
-            </div>
-
             {selectedDomains.length === 0 ? (
               <p className="empty">Select at least one domain.</p>
             ) : (
               <div className="chart-wrap">
-                {view === "hourly" ? renderHourlyBars() : renderDailyLines()}
+                {isHourlyRange ? renderHourlyBars() : renderDailyLines()}
                 <div className="legend">
-                  <span className="legend-item overlay">Opens (proxy)</span>
-                  <span className="legend-item intentions">
-                    Intentions submitted
-                  </span>
+                  <span className={`legend-item ${metric}`}>{metricLabel}</span>
                 </div>
               </div>
             )}
 
-            {view === "daily" && selectedDomains.length > 0 && (
+            {!isHourlyRange &&
+              metric === "no_intention_rate" &&
+              selectedDomains.length > 0 && (
               <div className="no-intention">
                 <h3>No-intention rate</h3>
-                <p className="range-note">Last {range} days</p>
+                <p className="range-note">{rangeLabel}</p>
                 <div className="rate-grid">
                   {noIntentionRates.map((row) => (
                     <div key={row.domain} className="rate-card">

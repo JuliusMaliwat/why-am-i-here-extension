@@ -97,8 +97,121 @@ h1 {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
+}
+
+.panel-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 260px;
+  flex: 1 1 360px;
+}
+
+.panel-right {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.control-label {
+  color: var(--text-2);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.select-button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-1);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.select-button:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdown-button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-1);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-button.open {
+  border-color: rgba(231, 197, 149, 0.5);
+  box-shadow: 0 0 0 1px rgba(231, 197, 149, 0.2);
+}
+
+.dropdown-button::after {
+  content: "▾";
+  color: var(--text-2);
+  font-size: 0.8rem;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-height: 280px;
+  overflow: auto;
+  background: rgba(20, 23, 26, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-item input {
+  accent-color: var(--accent-strong);
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dropdown-item.active {
+  background: rgba(231, 197, 149, 0.15);
+  color: var(--accent-strong);
 }
 
 .panel-header h2 {
@@ -152,11 +265,16 @@ h1 {
   color: var(--text-2);
 }
 
+.domain-select {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .domain-filter {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 18px;
 }
 
 .domain-filter button {
@@ -193,7 +311,7 @@ svg {
   stroke-linecap: round;
 }
 
-.line.overlay {
+.line.opens {
   stroke: rgba(231, 197, 149, 0.9);
 }
 
@@ -201,12 +319,20 @@ svg {
   stroke: rgba(141, 196, 255, 0.8);
 }
 
-.bar.overlay {
+.line.no_intention_rate {
+  stroke: rgba(208, 159, 240, 0.8);
+}
+
+.bar.opens {
   fill: rgba(231, 197, 149, 0.6);
 }
 
 .bar.intentions {
   fill: rgba(141, 196, 255, 0.7);
+}
+
+.bar.no_intention_rate {
+  fill: rgba(208, 159, 240, 0.65);
 }
 
 .legend {
@@ -226,12 +352,16 @@ svg {
   margin-right: 6px;
 }
 
-.legend-item.overlay::before {
+.legend-item.opens::before {
   background: rgba(231, 197, 149, 0.9);
 }
 
 .legend-item.intentions::before {
   background: rgba(141, 196, 255, 0.8);
+}
+
+.legend-item.no_intention_rate::before {
+  background: rgba(208, 159, 240, 0.8);
 }
 
 .no-intention {
