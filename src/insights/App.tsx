@@ -183,7 +183,7 @@ export function App(): JSX.Element {
   ];
 
   const metricOptions: { id: MetricOption; label: string }[] = [
-    { id: "opens", label: "Opens (proxy)" },
+    { id: "opens", label: "Opens" },
     { id: "intentions", label: "Intentions submitted" },
     { id: "no_intention_rate", label: "No-intention rate" }
   ];
@@ -816,25 +816,6 @@ export function App(): JSX.Element {
               </div>
             )}
 
-            {!isHourlyRange &&
-              metric === "no_intention_rate" &&
-              selectedDomains.length > 0 && (
-              <div className="no-intention">
-                <h3>No-intention rate</h3>
-                <p className="range-note">{rangeLabel}</p>
-                <div className="rate-grid">
-                  {noIntentionRates.map((row) => (
-                    <div key={row.domain} className="rate-card">
-                      <p className="rate-domain">{row.domain}</p>
-                      <p className="rate-value">{row.rate}%</p>
-                      <p className="rate-detail">
-                        {row.noIntention} / {row.overlayShown} opens
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
         )}
       </section>

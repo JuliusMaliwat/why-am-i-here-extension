@@ -435,52 +435,10 @@ svg {
   background: rgba(208, 159, 240, 0.8);
 }
 
-.no-intention {
-  margin-top: 24px;
-}
-
-.no-intention h3 {
-  margin: 0 0 12px;
-  font-size: 1rem;
-  color: var(--text-1);
-}
-
 .range-note {
-  margin: -6px 0 16px;
+  margin: 16px 0 0;
   color: var(--text-2);
   font-size: 0.8rem;
-}
-
-.rate-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-}
-
-.rate-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 12px 14px;
-}
-
-.rate-domain {
-  margin: 0;
-  color: var(--text-2);
-  font-size: 0.8rem;
-}
-
-.rate-value {
-  margin: 6px 0 2px;
-  font-size: 1.4rem;
-  color: var(--accent-strong);
-  font-weight: 600;
-}
-
-.rate-detail {
-  margin: 0;
-  color: var(--text-2);
-  font-size: 0.75rem;
 }
 
 @media (max-width: 720px) {
