@@ -305,22 +305,54 @@ svg {
   height: 220px;
 }
 
+.chart-svg.opens {
+  color: rgba(231, 197, 149, 0.9);
+}
+
+.chart-svg.intentions {
+  color: rgba(141, 196, 255, 0.8);
+}
+
+.chart-svg.no_intention_rate {
+  color: rgba(208, 159, 240, 0.8);
+}
+
 .line {
   fill: none;
   stroke-width: 3;
   stroke-linecap: round;
 }
 
+.area {
+  fill: currentColor;
+  opacity: 0.18;
+}
+
 .line.opens {
   stroke: rgba(231, 197, 149, 0.9);
+  color: rgba(231, 197, 149, 0.9);
 }
 
 .line.intentions {
   stroke: rgba(141, 196, 255, 0.8);
+  color: rgba(141, 196, 255, 0.8);
 }
 
 .line.no_intention_rate {
   stroke: rgba(208, 159, 240, 0.8);
+  color: rgba(208, 159, 240, 0.8);
+}
+
+.area.opens {
+  color: rgba(231, 197, 149, 0.9);
+}
+
+.area.intentions {
+  color: rgba(141, 196, 255, 0.8);
+}
+
+.area.no_intention_rate {
+  color: rgba(208, 159, 240, 0.8);
 }
 
 .bar.opens {
@@ -333,6 +365,36 @@ svg {
 
 .bar.no_intention_rate {
   fill: rgba(208, 159, 240, 0.65);
+}
+
+.chart-focus line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-dasharray: 4 6;
+}
+
+.chart-focus circle {
+  fill: currentColor;
+  stroke: rgba(15, 17, 19, 0.9);
+  stroke-width: 3;
+}
+
+.chart-tooltip rect {
+  fill: rgba(32, 36, 40, 0.75);
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.chart-tooltip text {
+  fill: var(--text-0);
+  font-size: 0.8rem;
+}
+
+.chart-tooltip .tooltip-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.chart-tooltip {
+  backdrop-filter: blur(8px);
 }
 
 .legend {

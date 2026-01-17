@@ -123,6 +123,7 @@ export function App(): JSX.Element {
   const [domainMenuOpen, setDomainMenuOpen] = useState(false);
   const [metricMenuOpen, setMetricMenuOpen] = useState(false);
   const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const metricMenuRef = useRef<HTMLDivElement | null>(null);
   const domainMenuRef = useRef<HTMLDivElement | null>(null);
   const rangeMenuRef = useRef<HTMLDivElement | null>(null);
@@ -246,34 +247,96 @@ export function App(): JSX.Element {
     return Math.max(1, ...values);
   }, [series, metric]);
 
-  const linePoints = (): string => {
-    if (series.length <= 1) {
-      return "";
+  const chartLayout = {
+    width: 1000,
+    height: 220,
+    padX: 40,
+    padY: 24
+  };
+
+  const chartPoints = useMemo(() => {
+    if (series.length === 0) {
+      return [];
     }
-    const width = 1000;
-    const height = 220;
-    const padX = 40;
-    const padY = 24;
-    const usableW = width - padX * 2;
-    const usableH = height - padY * 2;
-    return series
-      .map((point, index) => {
-        const x = padX + (usableW * index) / (series.length - 1);
-        let value = point.overlayShown;
-        if (metric === "intentions") {
-          value = point.intentionSubmitted;
-        } else if (metric === "no_intention_rate") {
-          value =
-            point.overlayShown > 0
-              ? ((point.overlayShown - point.intentionSubmitted) /
-                  point.overlayShown) *
-                100
-              : 0;
-        }
-        const y = padY + usableH * (1 - value / maxValue);
-        return `${x},${y}`;
-      })
-      .join(" ");
+    const usableW = chartLayout.width - chartLayout.padX * 2;
+    const usableH = chartLayout.height - chartLayout.padY * 2;
+    return series.map((point, index) => {
+      const x = chartLayout.padX + (usableW * index) / (series.length - 1);
+      let value = point.overlayShown;
+      if (metric === "intentions") {
+        value = point.intentionSubmitted;
+      } else if (metric === "no_intention_rate") {
+        value =
+          point.overlayShown > 0
+            ? ((point.overlayShown - point.intentionSubmitted) /
+                point.overlayShown) *
+              100
+            : 0;
+      }
+      const y = chartLayout.padY + usableH * (1 - value / maxValue);
+      const label = "hour" in point ? point.hour : point.date;
+      return { x, y, value, label };
+    });
+  }, [series, metric, maxValue, chartLayout]);
+
+  const formatValue = (value: number): string => {
+    if (metric === "no_intention_rate") {
+      return `${Math.round(value)}%`;
+    }
+    return `${Math.round(value)}`;
+  };
+
+  const formatLabel = (label: string): string => {
+    const includeYear = range === "all" || range === "12m";
+    if (isHourlyRange) {
+      const [datePart, timePart] = label.split(" ");
+      const [year, month, day] = datePart.split("-").map(Number);
+      const [hour] = timePart.split(":").map(Number);
+      if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+        return new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          ...(includeYear ? { year: "numeric" } : {})
+        }).format(new Date(year, month - 1, day, hour));
+      }
+    }
+    if (label.includes("-")) {
+      const [year, month, day] = label.split("-").map(Number);
+      if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+        return new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          ...(includeYear ? { year: "numeric" } : {})
+        }).format(new Date(year, month - 1, day));
+      }
+    }
+    return label;
+  };
+
+  const handleChartMove = (
+    event: React.MouseEvent<SVGSVGElement>
+  ): void => {
+    if (chartPoints.length === 0) {
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const usableW = chartLayout.width - chartLayout.padX * 2;
+    const relativeX =
+      ((event.clientX - rect.left) / rect.width) * chartLayout.width;
+    const clampedX = Math.min(
+      chartLayout.width - chartLayout.padX,
+      Math.max(chartLayout.padX, relativeX)
+    );
+    const index = Math.round(
+      ((clampedX - chartLayout.padX) / usableW) *
+        Math.max(1, chartPoints.length - 1)
+    );
+    setHoverIndex(index);
+  };
+
+  const handleChartLeave = (): void => {
+    setHoverIndex(null);
   };
 
   const toggleDomain = (domain: string): void => {
@@ -286,31 +349,24 @@ export function App(): JSX.Element {
   };
 
   const renderHourlyBars = (): JSX.Element => {
-    const width = 1000;
-    const height = 220;
-    const padX = 40;
-    const padY = 24;
-    const usableW = width - padX * 2;
-    const usableH = height - padY * 2;
+    const usableW = chartLayout.width - chartLayout.padX * 2;
+    const usableH = chartLayout.height - chartLayout.padY * 2;
     const slot = usableW / series.length;
     const barWidth = Math.min(14, slot * 0.6);
     return (
-      <svg viewBox="0 0 1000 220" role="img">
+      <svg
+        viewBox="0 0 1000 220"
+        role="img"
+        className={`chart-svg ${metric}`}
+        onMouseMove={handleChartMove}
+        onMouseLeave={handleChartLeave}
+      >
         {series.map((point, index) => {
-          const x = padX + index * slot + (slot - barWidth) / 2;
-          let value = point.overlayShown;
-          if (metric === "intentions") {
-            value = point.intentionSubmitted;
-          } else if (metric === "no_intention_rate") {
-            value =
-              point.overlayShown > 0
-                ? ((point.overlayShown - point.intentionSubmitted) /
-                    point.overlayShown) *
-                  100
-                : 0;
-          }
+          const x =
+            chartLayout.padX + index * slot + (slot - barWidth) / 2;
+          const value = chartPoints[index]?.value ?? 0;
           const barHeight = usableH * (value / maxValue);
-          const barY = padY + (usableH - barHeight);
+          const barY = chartLayout.padY + (usableH - barHeight);
           return (
             <g key={point.hour}>
               <rect
@@ -323,14 +379,128 @@ export function App(): JSX.Element {
             </g>
           );
         })}
+        {hoverIndex !== null && chartPoints[hoverIndex] && (
+          <g className="chart-focus">
+            <line
+              x1={chartPoints[hoverIndex].x}
+              x2={chartPoints[hoverIndex].x}
+              y1={chartLayout.padY}
+              y2={chartLayout.height - chartLayout.padY}
+            />
+            <circle
+              cx={chartPoints[hoverIndex].x}
+              cy={chartPoints[hoverIndex].y}
+              r={5}
+            />
+            <g
+              className="chart-tooltip"
+              transform={`translate(${Math.min(
+                Math.max(
+                  chartLayout.padX,
+                  chartPoints[hoverIndex].x - 80
+                ),
+                chartLayout.width - chartLayout.padX - 160
+              )},${Math.max(
+                chartLayout.padY,
+                chartPoints[hoverIndex].y - 70
+              )})`}
+            >
+              <rect width="160" height="56" rx="14" />
+              <text x="12" y="20" className="tooltip-label">
+                {formatLabel(chartPoints[hoverIndex].label)}
+              </text>
+              <text x="12" y="42" className="tooltip-value">
+                {formatValue(chartPoints[hoverIndex].value)}
+              </text>
+            </g>
+          </g>
+        )}
       </svg>
     );
   };
 
   const renderDailyLines = (): JSX.Element => {
+    if (chartPoints.length === 0) {
+      return (
+        <svg viewBox="0 0 1000 220" role="img">
+          <polyline className={`line ${metric}`} points="" />
+        </svg>
+      );
+    }
+    const linePath = chartPoints
+      .map((point) => `${point.x},${point.y}`)
+      .join(" ");
+    const areaPath = [
+      `M ${chartPoints[0].x} ${chartPoints[0].y}`,
+      ...chartPoints.slice(1).map((point) => `L ${point.x} ${point.y}`),
+      `L ${chartPoints[chartPoints.length - 1].x} ${
+        chartLayout.height - chartLayout.padY
+      }`,
+      `L ${chartPoints[0].x} ${chartLayout.height - chartLayout.padY}`,
+      "Z"
+    ].join(" ");
     return (
-      <svg viewBox="0 0 1000 220" role="img">
-        <polyline className={`line ${metric}`} points={linePoints()} />
+      <svg
+        viewBox="0 0 1000 220"
+        role="img"
+        className={`chart-svg ${metric}`}
+        onMouseMove={handleChartMove}
+        onMouseLeave={handleChartLeave}
+      >
+        <defs>
+          <linearGradient
+            id="chart-area-gradient"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path
+          className={`area ${metric}`}
+          d={areaPath}
+          fill="url(#chart-area-gradient)"
+        />
+        <polyline className={`line ${metric}`} points={linePath} />
+        {hoverIndex !== null && chartPoints[hoverIndex] && (
+          <g className="chart-focus">
+            <line
+              x1={chartPoints[hoverIndex].x}
+              x2={chartPoints[hoverIndex].x}
+              y1={chartLayout.padY}
+              y2={chartLayout.height - chartLayout.padY}
+            />
+            <circle
+              cx={chartPoints[hoverIndex].x}
+              cy={chartPoints[hoverIndex].y}
+              r={5}
+            />
+            <g
+              className="chart-tooltip"
+              transform={`translate(${Math.min(
+                Math.max(
+                  chartLayout.padX,
+                  chartPoints[hoverIndex].x - 80
+                ),
+                chartLayout.width - chartLayout.padX - 160
+              )},${Math.max(
+                chartLayout.padY,
+                chartPoints[hoverIndex].y - 70
+              )})`}
+            >
+              <rect width="160" height="56" rx="14" />
+              <text x="12" y="20" className="tooltip-label">
+                {formatLabel(chartPoints[hoverIndex].label)}
+              </text>
+              <text x="12" y="42" className="tooltip-value">
+                {formatValue(chartPoints[hoverIndex].value)}
+              </text>
+            </g>
+          </g>
+        )}
       </svg>
     );
   };
