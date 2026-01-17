@@ -127,6 +127,7 @@ export function App(): JSX.Element {
   const metricMenuRef = useRef<HTMLDivElement | null>(null);
   const domainMenuRef = useRef<HTMLDivElement | null>(null);
   const rangeMenuRef = useRef<HTMLDivElement | null>(null);
+  const hasInitializedDomains = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -166,11 +167,10 @@ export function App(): JSX.Element {
   );
 
   useEffect(() => {
-    if (domains.length === 0) return;
-    if (selectedDomains.length === 0) {
-      setSelectedDomains(domains);
-    }
-  }, [domains, selectedDomains.length]);
+    if (domains.length === 0 || hasInitializedDomains.current) return;
+    setSelectedDomains(domains);
+    hasInitializedDomains.current = true;
+  }, [domains]);
 
   const rangeOptions: { id: RangeOption; label: string }[] = [
     { id: "24h", label: "Last 24 hours" },
