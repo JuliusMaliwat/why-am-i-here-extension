@@ -328,13 +328,15 @@ export function App(): JSX.Element {
     if (chartPoints.length === 0) {
       return [];
     }
-    const tickCount = isHourlyRange ? 6 : 5;
-    const step = Math.max(1, Math.floor((chartPoints.length - 1) / (tickCount - 1)));
+    const minGap = isHourlyRange ? 70 : 90;
     const ticks: { x: number; label: string }[] = [];
-    for (let i = 0; i < chartPoints.length; i += step) {
-      const point = chartPoints[i];
-      ticks.push({ x: point.x, label: formatLabel(point.label) });
-    }
+    let lastX = -Infinity;
+    chartPoints.forEach((point, index) => {
+      if (index === 0 || point.x - lastX >= minGap) {
+        ticks.push({ x: point.x, label: formatLabel(point.label) });
+        lastX = point.x;
+      }
+    });
     const lastPoint = chartPoints[chartPoints.length - 1];
     if (ticks.length === 0 || ticks[ticks.length - 1].x !== lastPoint.x) {
       ticks.push({ x: lastPoint.x, label: formatLabel(lastPoint.label) });
@@ -412,7 +414,7 @@ export function App(): JSX.Element {
           {getYTicks().map((tick) => (
             <text
               key={`y-label-${tick.value}`}
-              x={chartLayout.padX - 8}
+              x={chartLayout.padX - 10}
               y={tick.y + 4}
               textAnchor="end"
             >
@@ -423,7 +425,7 @@ export function App(): JSX.Element {
             <text
               key={`x-label-${tick.x}`}
               x={tick.x}
-              y={chartLayout.height - chartLayout.padY + 16}
+              y={chartLayout.height - chartLayout.padY + 18}
               textAnchor="middle"
             >
               {tick.label}
@@ -531,7 +533,7 @@ export function App(): JSX.Element {
           {getYTicks().map((tick) => (
             <text
               key={`y-label-${tick.value}`}
-              x={chartLayout.padX - 8}
+              x={chartLayout.padX - 10}
               y={tick.y + 4}
               textAnchor="end"
             >
@@ -542,7 +544,7 @@ export function App(): JSX.Element {
             <text
               key={`x-label-${tick.x}`}
               x={tick.x}
-              y={chartLayout.height - chartLayout.padY + 16}
+              y={chartLayout.height - chartLayout.padY + 18}
               textAnchor="middle"
             >
               {tick.label}
