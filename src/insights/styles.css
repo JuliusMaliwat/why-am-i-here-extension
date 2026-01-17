@@ -305,6 +305,15 @@ svg {
   height: 220px;
 }
 
+.axis-grid line {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+
+.axis-labels text {
+  fill: var(--text-2);
+  font-size: 0.7rem;
+}
+
 .chart-svg.opens {
   color: rgba(231, 197, 149, 0.9);
 }

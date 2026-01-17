@@ -286,6 +286,16 @@ export function App(): JSX.Element {
     return `${Math.round(value)}`;
   };
 
+  const formatAxisValue = (value: number): string => {
+    if (metric === "no_intention_rate") {
+      return `${Math.round(value)}%`;
+    }
+    if (value >= 1000) {
+      return `${Math.round(value / 1000)}k`;
+    }
+    return `${Math.round(value)}`;
+  };
+
   const formatLabel = (label: string): string => {
     const includeYear = range === "all" || range === "12m";
     if (isHourlyRange) {
@@ -312,6 +322,32 @@ export function App(): JSX.Element {
       }
     }
     return label;
+  };
+
+  const getXTicks = (): { x: number; label: string }[] => {
+    if (chartPoints.length === 0) {
+      return [];
+    }
+    const tickCount = isHourlyRange ? 6 : 5;
+    const step = Math.max(1, Math.floor((chartPoints.length - 1) / (tickCount - 1)));
+    const ticks: { x: number; label: string }[] = [];
+    for (let i = 0; i < chartPoints.length; i += step) {
+      const point = chartPoints[i];
+      ticks.push({ x: point.x, label: formatLabel(point.label) });
+    }
+    const lastPoint = chartPoints[chartPoints.length - 1];
+    if (ticks.length === 0 || ticks[ticks.length - 1].x !== lastPoint.x) {
+      ticks.push({ x: lastPoint.x, label: formatLabel(lastPoint.label) });
+    }
+    return ticks;
+  };
+
+  const getYTicks = (): { y: number; value: number }[] => {
+    const ticks = [0, Math.round(maxValue / 2), Math.round(maxValue)];
+    return ticks.map((value) => ({
+      value,
+      y: chartLayout.padY + (chartLayout.height - chartLayout.padY * 2) * (1 - value / maxValue)
+    }));
   };
 
   const handleChartMove = (
@@ -361,6 +397,39 @@ export function App(): JSX.Element {
         onMouseMove={handleChartMove}
         onMouseLeave={handleChartLeave}
       >
+        <g className="axis-grid">
+          {getYTicks().map((tick) => (
+            <line
+              key={`y-${tick.value}`}
+              x1={chartLayout.padX}
+              x2={chartLayout.width - chartLayout.padX}
+              y1={tick.y}
+              y2={tick.y}
+            />
+          ))}
+        </g>
+        <g className="axis-labels">
+          {getYTicks().map((tick) => (
+            <text
+              key={`y-label-${tick.value}`}
+              x={chartLayout.padX - 8}
+              y={tick.y + 4}
+              textAnchor="end"
+            >
+              {formatAxisValue(tick.value)}
+            </text>
+          ))}
+          {getXTicks().map((tick) => (
+            <text
+              key={`x-label-${tick.x}`}
+              x={tick.x}
+              y={chartLayout.height - chartLayout.padY + 16}
+              textAnchor="middle"
+            >
+              {tick.label}
+            </text>
+          ))}
+        </g>
         {series.map((point, index) => {
           const x =
             chartLayout.padX + index * slot + (slot - barWidth) / 2;
@@ -447,6 +516,39 @@ export function App(): JSX.Element {
         onMouseMove={handleChartMove}
         onMouseLeave={handleChartLeave}
       >
+        <g className="axis-grid">
+          {getYTicks().map((tick) => (
+            <line
+              key={`y-${tick.value}`}
+              x1={chartLayout.padX}
+              x2={chartLayout.width - chartLayout.padX}
+              y1={tick.y}
+              y2={tick.y}
+            />
+          ))}
+        </g>
+        <g className="axis-labels">
+          {getYTicks().map((tick) => (
+            <text
+              key={`y-label-${tick.value}`}
+              x={chartLayout.padX - 8}
+              y={tick.y + 4}
+              textAnchor="end"
+            >
+              {formatAxisValue(tick.value)}
+            </text>
+          ))}
+          {getXTicks().map((tick) => (
+            <text
+              key={`x-label-${tick.x}`}
+              x={tick.x}
+              y={chartLayout.height - chartLayout.padY + 16}
+              textAnchor="middle"
+            >
+              {tick.label}
+            </text>
+          ))}
+        </g>
         <defs>
           <linearGradient
             id="chart-area-gradient"
