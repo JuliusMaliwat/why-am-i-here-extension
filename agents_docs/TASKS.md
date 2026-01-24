@@ -170,12 +170,12 @@
   * Output: extra confirmation when no timer is selected
   * DoD: minimal friction (one-step), only on no-timer path, easy to dismiss
 
-* [ ] **Insights v0: metric simplification (no-intention only)**
+* [x] **Insights v0: metric simplification (no-intention only)**
 
   * Output: single metric (No-intention rate) in Insights
   * DoD: dropdown shows only No-intention rate; default metric set accordingly
 
-* [ ] **Insights v0: view toggle (Rate vs Breakdown)**
+* [x] **Insights v0: view toggle (Rate vs Breakdown)**
 
   * Output: toggle near chart to switch views
   * DoD: default Rate; user can switch; state persists during session

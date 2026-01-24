@@ -8,7 +8,8 @@ import { clearEvents, getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 
 type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
-type MetricOption = "opens" | "intentions" | "no_intention_rate";
+type MetricOption = "no_intention_rate";
+type ViewMode = "rate" | "breakdown";
 
 type SeriesPoint = {
   date: string;
@@ -119,12 +120,11 @@ export function App(): JSX.Element {
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [range, setRange] = useState<RangeOption>("30d");
-  const [metric, setMetric] = useState<MetricOption>("no_intention_rate");
+  const metric: MetricOption = "no_intention_rate";
+  const [viewMode, setViewMode] = useState<ViewMode>("rate");
   const [domainMenuOpen, setDomainMenuOpen] = useState(false);
-  const [metricMenuOpen, setMetricMenuOpen] = useState(false);
   const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const metricMenuRef = useRef<HTMLDivElement | null>(null);
   const domainMenuRef = useRef<HTMLDivElement | null>(null);
   const rangeMenuRef = useRef<HTMLDivElement | null>(null);
   const hasInitializedDomains = useRef(false);
@@ -202,12 +202,6 @@ export function App(): JSX.Element {
     { id: "6m", label: "Last 6 months" },
     { id: "12m", label: "Last 12 months" },
     { id: "all", label: "All time" }
-  ];
-
-  const metricOptions: { id: MetricOption; label: string }[] = [
-    { id: "opens", label: "Opens" },
-    { id: "intentions", label: "Intentions submitted" },
-    { id: "no_intention_rate", label: "No-intention rate" }
   ];
 
   const isHourlyRange = range === "24h";
@@ -536,8 +530,7 @@ export function App(): JSX.Element {
     );
   };
 
-  const metricLabel =
-    metricOptions.find((option) => option.id === metric)?.label ?? "Metric";
+  const metricLabel = "No-intention rate";
 
   const rangeLabel =
     rangeOptions.find((option) => option.id === range)?.label ?? "Time range";
@@ -549,7 +542,6 @@ export function App(): JSX.Element {
 
   const closeMenus = (): void => {
     setDomainMenuOpen(false);
-    setMetricMenuOpen(false);
     setRangeMenuOpen(false);
   };
 
@@ -566,7 +558,7 @@ export function App(): JSX.Element {
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent): void => {
       const target = event.target as Node;
-      const containers = [metricMenuRef, domainMenuRef, rangeMenuRef];
+      const containers = [domainMenuRef, rangeMenuRef];
       const isInside = containers.some((ref) => ref.current?.contains(target));
       if (!isInside) {
         closeMenus();
@@ -614,43 +606,22 @@ export function App(): JSX.Element {
           </div>
           <div className="panel-right">
             <div className="control-group">
-              <span className="control-label">Metric</span>
-              <div className="dropdown" ref={metricMenuRef}>
+              <span className="control-label">View</span>
+              <div className="view-toggle">
                 <button
                   type="button"
-                  className={`dropdown-button ${
-                    metricMenuOpen ? "open" : ""
-                  }`}
-                  onClick={() => {
-                    setMetricMenuOpen((open) => {
-                      const next = !open;
-                      setDomainMenuOpen(false);
-                      setRangeMenuOpen(false);
-                      return next;
-                    });
-                  }}
+                  className={viewMode === "rate" ? "active" : ""}
+                  onClick={() => setViewMode("rate")}
                 >
-                  <span className="metric-label">{metricLabel}</span>
+                  Rate
                 </button>
-                  {metricMenuOpen && (
-                  <div className="dropdown-menu">
-                    {metricOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className={
-                          option.id === metric ? "dropdown-item active" : "dropdown-item"
-                        }
-                        onClick={() => {
-                          setMetric(option.id);
-                          setMetricMenuOpen(false);
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  className={viewMode === "breakdown" ? "active" : ""}
+                  onClick={() => setViewMode("breakdown")}
+                >
+                  Breakdown
+                </button>
               </div>
             </div>
             {!isLoading && domains.length > 0 && (
@@ -665,7 +636,6 @@ export function App(): JSX.Element {
                     onClick={() => {
                       setDomainMenuOpen((open) => {
                         const next = !open;
-                        setMetricMenuOpen(false);
                         setRangeMenuOpen(false);
                         return next;
                       });
@@ -701,7 +671,6 @@ export function App(): JSX.Element {
                   onClick={() => {
                     setRangeMenuOpen((open) => {
                       const next = !open;
-                      setMetricMenuOpen(false);
                       setDomainMenuOpen(false);
                       return next;
                     });
