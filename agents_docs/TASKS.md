@@ -150,7 +150,7 @@
   * Output: top 5 intentions per domain
   * DoD: normalized by lowercase + trim + collapsed spaces
 
-* [ ] **Insights v0: intention quality gate (min length)**
+* [x] **Insights v0: intention quality gate (min length)**
 
   * Output: block submit when intention is too short (default 6 chars)
   * DoD: inline hint explains requirement; applies to initial + re-prompt submit

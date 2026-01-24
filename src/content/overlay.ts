@@ -45,6 +45,52 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function isLowSignalIntention(value: string): boolean {
+  const trimmed = value.trim();
+  const compact = trimmed.replace(/\s+/g, "");
+  if (!compact) return false;
+
+  const letters = compact.match(/[a-z]/gi) ?? [];
+  const letterRatio = letters.length / compact.length;
+  if (letterRatio < 0.6) return true;
+
+  if (/(.)\1{3,}/.test(compact)) return true;
+  if (/(.{2,3})\1{1,}/i.test(compact)) return true;
+
+  const uniqueChars = new Set(compact.toLowerCase()).size;
+  if (compact.length >= 8 && uniqueChars / compact.length < 0.4) {
+    return true;
+  }
+
+  if (letters.length >= 8 && !trimmed.includes(" ")) {
+    const vowels = compact.match(/[aeiouy]/gi) ?? [];
+    const vowelRatio = vowels.length / letters.length;
+    if (vowelRatio < 0.25) return true;
+
+    const longConsonantStreak =
+      /[^aeiouy\W]{5,}/i.test(compact) ||
+      /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(compact);
+    if (longConsonantStreak) return true;
+  }
+
+  if (!trimmed.includes(" ") && letters.length >= 9) {
+    return true;
+  }
+
+  if (!trimmed.includes(" ") && letters.length >= 6) {
+    const vowels = compact.match(/[aeiouy]/gi) ?? [];
+    const vowelRatio = vowels.length / letters.length;
+    if (vowelRatio < 0.3) return true;
+
+    const consonantStreak =
+      /[^aeiouy\W]{4,}/i.test(compact) ||
+      /[bcdfghjklmnpqrstvwxyz]{4,}/i.test(compact);
+    if (consonantStreak) return true;
+  }
+
+  return false;
+}
+
 function getDefaultPillPosition(): PillPosition {
   return {
     x: window.innerWidth / 2,
@@ -659,9 +705,13 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   let hasDrag = false;
   if (mode === "gate") {
     input.addEventListener("input", () => {
+      const current = input.value.trim();
+      const wordCount = current ? current.split(/\s+/).length : 0;
       if (
         error.textContent &&
-        input.value.trim().length >= MIN_INTENTION_LENGTH
+        current.length >= MIN_INTENTION_LENGTH &&
+        wordCount >= 2 &&
+        !isLowSignalIntention(current)
       ) {
         error.textContent = "";
         error.style.display = "none";
@@ -694,6 +744,23 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       }
       if (intention.length < MIN_INTENTION_LENGTH) {
         error.textContent = `Add at least ${MIN_INTENTION_LENGTH} characters to continue.`;
+        error.style.display = "block";
+        pill.classList.add("is-error");
+        input.focus();
+        updateTypingState();
+        return;
+      }
+      const wordCount = intention.split(/\s+/).length;
+      if (wordCount < 2) {
+        error.textContent = "Add at least two words to continue.";
+        error.style.display = "block";
+        pill.classList.add("is-error");
+        input.focus();
+        updateTypingState();
+        return;
+      }
+      if (isLowSignalIntention(intention)) {
+        error.textContent = "Make the intention a bit clearer to continue.";
         error.style.display = "block";
         pill.classList.add("is-error");
         input.focus();
