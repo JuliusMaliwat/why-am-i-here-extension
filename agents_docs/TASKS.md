@@ -190,7 +190,7 @@
   * Output: tooltip and legend adapt to view
   * DoD: Rate shows % + "x / y opens"; Breakdown shows both counts
 
-* [ ] **Insights v0: axis scale handling**
+* [x] **Insights v0: axis scale handling**
 
   * Output: axis switches between % and counts
   * DoD: labels correct for active view
