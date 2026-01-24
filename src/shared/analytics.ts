@@ -17,11 +17,308 @@ export type HourlyDomainCounts = {
 export type TopIntention = {
   text: string;
   count: number;
+  variants: { text: string; count: number }[];
 };
 
 type DomainDailyMap = Record<string, Record<string, DailyDomainCounts>>;
 type DomainHourlyMap = Record<string, Record<string, HourlyDomainCounts>>;
 type DomainIntentionMap = Record<string, Map<string, number>>;
+
+type IntentionCluster = {
+  representative: string;
+  repCount: number;
+  repTokens: string[];
+  total: number;
+  variants: Map<string, number>;
+};
+
+const STOPWORDS = new Set([
+  "a",
+  "about",
+  "a",
+  "ad",
+  "after",
+  "again",
+  "al",
+  "allo",
+  "alla",
+  "all",
+  "ai",
+  "agli",
+  "alle",
+  "am",
+  "an",
+  "and",
+  "another",
+  "any",
+  "are",
+  "as",
+  "at",
+  "be",
+  "been",
+  "being",
+  "but",
+  "da",
+  "dal",
+  "dallo",
+  "dalla",
+  "dei",
+  "degli",
+  "delle",
+  "did",
+  "di",
+  "do",
+  "does",
+  "doing",
+  "done",
+  "e",
+  "ed",
+  "for",
+  "from",
+  "go",
+  "going",
+  "gone",
+  "got",
+  "had",
+  "has",
+  "have",
+  "having",
+  "o",
+  "of",
+  "on",
+  "or",
+  "our",
+  "ours",
+  "out",
+  "over",
+  "per",
+  "che",
+  "how",
+  "i",
+  "il",
+  "lo",
+  "la",
+  "i",
+  "gli",
+  "le",
+  "un",
+  "una",
+  "uno",
+  "in",
+  "into",
+  "is",
+  "it",
+  "its",
+  "su",
+  "so",
+  "some",
+  "still",
+  "per",
+  "mi",
+  "ti",
+  "si",
+  "ci",
+  "vi",
+  "non",
+  "not",
+  "now",
+  "no",
+  "off",
+  "once",
+  "only",
+  "other",
+  "our",
+  "ours",
+  "out",
+  "sto",
+  "stai",
+  "sta",
+  "stiamo",
+  "state",
+  "stanno",
+  "devo",
+  "devi",
+  "deve",
+  "dobbiamo",
+  "dovete",
+  "devono",
+  "ancora",
+  "to",
+  "the",
+  "this",
+  "that",
+  "these",
+  "those",
+  "then",
+  "than",
+  "there",
+  "their",
+  "theirs",
+  "them",
+  "they",
+  "you",
+  "your",
+  "yours",
+  "we",
+  "us",
+  "voglio",
+  "vorrei",
+  "posso",
+  "puoi",
+  "puo",
+  "want",
+  "wanted",
+  "wants",
+  "wanna",
+  "need",
+  "needs",
+  "needed",
+  "with",
+  "without",
+  "while",
+  "when",
+  "where",
+  "why",
+  "who",
+  "whom",
+  "what",
+  "which",
+  "will",
+  "would",
+  "should",
+  "could"
+]);
+
+function normalizeForSimilarity(text: string): string[] {
+  const cleaned = text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return [];
+  const tokens = cleaned
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token && !STOPWORDS.has(token));
+  return tokens.map((token) => {
+    if (token.length <= 4) {
+      return token;
+    }
+    return token.slice(0, 5);
+  });
+}
+
+function similarityScore(tokensA: string[], tokensB: string[]): number {
+  if (tokensA.length === 0 || tokensB.length === 0) {
+    return 0;
+  }
+  const setA = new Set(tokensA);
+  const setB = new Set(tokensB);
+  let intersection = 0;
+  setA.forEach((token) => {
+    if (setB.has(token)) {
+      intersection += 1;
+    }
+  });
+  if (intersection === 0) {
+    return 0;
+  }
+  const union = setA.size + setB.size - intersection;
+  const jaccard = intersection / union;
+  return jaccard;
+}
+
+function isBetterRepresentative(
+  candidate: string,
+  candidateCount: number,
+  current: string,
+  currentCount: number
+): boolean {
+  if (candidate.length !== current.length) {
+    return candidate.length > current.length;
+  }
+  if (candidateCount !== currentCount) {
+    return candidateCount > currentCount;
+  }
+  return candidate.localeCompare(current) < 0;
+}
+
+function groupIntentions(
+  intentionMap: Map<string, number>,
+  limit: number
+): TopIntention[] {
+  const items = Array.from(intentionMap.entries()).sort((a, b) => {
+    if (b[1] !== a[1]) {
+      return b[1] - a[1];
+    }
+    return a[0].localeCompare(b[0]);
+  });
+
+  const clusters: IntentionCluster[] = [];
+  items.forEach(([text, count]) => {
+    const tokens = normalizeForSimilarity(text);
+    let bestIndex = -1;
+    let bestScore = 0;
+    clusters.forEach((cluster, index) => {
+      const score = similarityScore(tokens, cluster.repTokens);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+
+    if (bestScore >= 0.5 && bestIndex >= 0) {
+      const cluster = clusters[bestIndex];
+      cluster.total += count;
+      const prevCount = cluster.variants.get(text) ?? 0;
+      cluster.variants.set(text, prevCount + count);
+      if (
+        isBetterRepresentative(
+          text,
+          count,
+          cluster.representative,
+          cluster.repCount
+        )
+      ) {
+        cluster.representative = text;
+        cluster.repCount = count;
+        cluster.repTokens = tokens;
+      }
+    } else {
+      clusters.push({
+        representative: text,
+        repCount: count,
+        repTokens: tokens,
+        total: count,
+        variants: new Map([[text, count]])
+      });
+    }
+  });
+
+  return clusters
+    .sort((a, b) => {
+      if (b.total !== a.total) {
+        return b.total - a.total;
+      }
+      return a.representative.localeCompare(b.representative);
+    })
+    .slice(0, limit)
+    .map((cluster) => {
+      const variants = Array.from(cluster.variants.entries())
+        .map(([text, count]) => ({ text, count }))
+        .sort((a, b) => {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.text.localeCompare(b.text);
+        });
+      return {
+        text: cluster.representative,
+        count: cluster.total,
+        variants
+      };
+    });
+}
 
 function toLocalDateKey(timestamp: number): string {
   const date = new Date(timestamp);
@@ -174,16 +471,7 @@ export function aggregateTopIntentionsByDomain(
 
   const result: Record<string, TopIntention[]> = {};
   Object.entries(map).forEach(([domain, intentionMap]) => {
-    const items = Array.from(intentionMap.entries())
-      .map(([text, count]) => ({ text, count }))
-      .sort((a, b) => {
-        if (b.count !== a.count) {
-          return b.count - a.count;
-        }
-        return a.text.localeCompare(b.text);
-      })
-      .slice(0, limit);
-    result[domain] = items;
+    result[domain] = groupIntentions(intentionMap, limit);
   });
 
   return result;

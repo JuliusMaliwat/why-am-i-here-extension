@@ -575,11 +575,17 @@ svg {
 
 .intentions-item {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-1);
+  font-size: 0.85rem;
+}
+
+.intentions-main {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: var(--text-1);
-  font-size: 0.85rem;
 }
 
 .intentions-text {
@@ -592,6 +598,21 @@ svg {
   color: var(--text-2);
   font-size: 0.75rem;
   flex-shrink: 0;
+}
+
+.intentions-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.intentions-variant {
+  color: var(--text-2);
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 
 .danger-zone {

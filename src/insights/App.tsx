@@ -919,19 +919,39 @@ export function App(): JSX.Element {
                           </p>
                         ) : (
                           <ol className="intentions-list">
-                            {items.map((item) => (
-                              <li
-                                key={`${domain}-${item.text}`}
-                                className="intentions-item"
-                              >
-                                <span className="intentions-text">
-                                  {item.text}
-                                </span>
-                                <span className="intentions-count">
-                                  {item.count}
-                                </span>
-                              </li>
-                            ))}
+                            {items.map((item) => {
+                              const variants =
+                                item.variants?.filter(
+                                  (variant) => variant.text !== item.text
+                                ) ?? [];
+                              return (
+                                <li
+                                  key={`${domain}-${item.text}`}
+                                  className="intentions-item"
+                                >
+                                  <div className="intentions-main">
+                                    <span className="intentions-text">
+                                      {item.text}
+                                    </span>
+                                    <span className="intentions-count">
+                                      {item.count}
+                                    </span>
+                                  </div>
+                                  {variants.length > 0 && (
+                                    <div className="intentions-variants">
+                                      {variants.map((variant) => (
+                                        <span
+                                          key={`${domain}-${item.text}-${variant.text}`}
+                                          className="intentions-variant"
+                                        >
+                                          {variant.text} · {variant.count}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </li>
+                              );
+                            })}
                           </ol>
                         )}
                       </div>
