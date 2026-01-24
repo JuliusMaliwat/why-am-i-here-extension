@@ -150,17 +150,17 @@
   * Output: top 5 intentions per domain
   * DoD: normalized by lowercase + trim + collapsed spaces
 
-* [ ] **Insights v0: intention quality gate (min length)**
+* [x] **Insights v0: intention quality gate (min length)**
 
   * Output: block submit when intention is too short (default 6 chars)
   * DoD: inline hint explains requirement; applies to initial + re-prompt submit
 
-* [ ] **Insights v0: low-signal intention heuristic (simple)**
+* [x] **Insights v0: low-signal intention heuristic (simple)**
 
   * Output: reject obvious gibberish (e.g. low letter ratio, excessive repeats)
   * DoD: gentle message; still allows valid short phrases like “ok” only if >= min length
 
-* [ ] **Insights v0: no-timer reinforcement (lightweight)**
+* [x] **Insights v0: no-timer reinforcement (lightweight)**
 
   * Output: extra confirmation when no timer is selected
   * DoD: minimal friction (one-step), only on no-timer path, easy to dismiss
