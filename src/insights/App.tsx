@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   aggregateDailyCountsByDomain,
-  aggregateHourlyCountsByDomain
+  aggregateHourlyCountsByDomain,
+  aggregateTopIntentionsByDomain
 } from "../shared/analytics";
 import { getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
-import type { DailyDomainCounts } from "../shared/analytics";
 
 type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
 type MetricOption = "opens" | "intentions" | "no_intention_rate";
@@ -160,6 +160,10 @@ export function App(): JSX.Element {
     () => aggregateHourlyCountsByDomain(events),
     [events]
   );
+  const topIntentionsByDomain = useMemo(
+    () => aggregateTopIntentionsByDomain(events, 5),
+    [events]
+  );
 
   const domains = useMemo(
     () => Object.keys(dailyByDomain).sort(),
@@ -214,27 +218,6 @@ export function App(): JSX.Element {
     }
     return buildSeries(dailyByDomain, selectedDomains, rangeDays);
   }, [dailyByDomain, hourlyByDomain, selectedDomains, rangeDays, isHourlyRange]);
-
-  const noIntentionRates = useMemo(() => {
-    return selectedDomains.map((domain) => {
-      const days = dailyByDomain[domain] ?? [];
-      const rangeDaysList = buildDateKeys(rangeDays).slice(-rangeDays);
-      const lookup = new Map<string, DailyDomainCounts>();
-      days.forEach((day) => lookup.set(day.date, day));
-      let overlayShown = 0;
-      let intentionSubmitted = 0;
-      rangeDaysList.forEach((date) => {
-        const day = lookup.get(date);
-        if (!day) return;
-        overlayShown += day.overlayShown;
-        intentionSubmitted += day.intentionSubmitted;
-      });
-      const noIntention = Math.max(0, overlayShown - intentionSubmitted);
-      const rate =
-        overlayShown > 0 ? Math.round((noIntention / overlayShown) * 100) : 0;
-      return { domain, rate, overlayShown, noIntention };
-    });
-  }, [dailyByDomain, selectedDomains, rangeDays]);
 
   const maxValue = useMemo(() => {
     if (metric === "no_intention_rate") {
@@ -812,6 +795,48 @@ export function App(): JSX.Element {
                 {isHourlyRange ? renderHourlyBars() : renderDailyLines()}
                 <div className="legend">
                   <span className={`legend-item ${metric}`}>{metricLabel}</span>
+                </div>
+              </div>
+            )}
+
+            {selectedDomains.length > 0 && (
+              <div className="intentions-section">
+                <div className="intentions-header">
+                  <h3>Top intentions</h3>
+                  <p className="panel-copy">
+                    Most common intentions submitted per domain.
+                  </p>
+                </div>
+                <div className="intentions-grid">
+                  {selectedDomains.map((domain) => {
+                    const items = topIntentionsByDomain[domain] ?? [];
+                    return (
+                      <div key={domain} className="intentions-card">
+                        <p className="intentions-domain">{domain}</p>
+                        {items.length === 0 ? (
+                          <p className="intentions-empty">
+                            No intentions yet.
+                          </p>
+                        ) : (
+                          <ol className="intentions-list">
+                            {items.map((item) => (
+                              <li
+                                key={`${domain}-${item.text}`}
+                                className="intentions-item"
+                              >
+                                <span className="intentions-text">
+                                  {item.text}
+                                </span>
+                                <span className="intentions-count">
+                                  {item.count}
+                                </span>
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

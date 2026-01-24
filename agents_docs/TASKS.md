@@ -145,7 +145,7 @@
   * Output: percentage of opens without submission per domain
   * DoD: formula = (overlay_shown - intention_submitted) / overlay_shown
 
-* [ ] **Insights v0: top intentions list**
+* [x] **Insights v0: top intentions list**
 
   * Output: top 5 intentions per domain
   * DoD: normalized by lowercase + trim + collapsed spaces

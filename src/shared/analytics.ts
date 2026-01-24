@@ -14,8 +14,14 @@ export type HourlyDomainCounts = {
   noIntention: number;
 };
 
+export type TopIntention = {
+  text: string;
+  count: number;
+};
+
 type DomainDailyMap = Record<string, Record<string, DailyDomainCounts>>;
 type DomainHourlyMap = Record<string, Record<string, HourlyDomainCounts>>;
+type DomainIntentionMap = Record<string, Map<string, number>>;
 
 function toLocalDateKey(timestamp: number): string {
   const date = new Date(timestamp);
@@ -133,6 +139,47 @@ export function aggregateHourlyCountsByDomain(
     const hours = Object.values(map[domain]);
     hours.sort((a, b) => a.hour.localeCompare(b.hour));
     result[domain] = hours;
+  });
+
+  return result;
+}
+
+export function aggregateTopIntentionsByDomain(
+  events: EventRecord[],
+  limit = 5
+): Record<string, TopIntention[]> {
+  const map: DomainIntentionMap = {};
+
+  events.forEach((event) => {
+    if (event.type !== "intention_submitted" || !event.intention) {
+      return;
+    }
+    const normalized = event.intention
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!normalized) {
+      return;
+    }
+    if (!map[event.domain]) {
+      map[event.domain] = new Map();
+    }
+    const count = map[event.domain].get(normalized) ?? 0;
+    map[event.domain].set(normalized, count + 1);
+  });
+
+  const result: Record<string, TopIntention[]> = {};
+  Object.entries(map).forEach(([domain, intentionMap]) => {
+    const items = Array.from(intentionMap.entries())
+      .map(([text, count]) => ({ text, count }))
+      .sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+        return a.text.localeCompare(b.text);
+      })
+      .slice(0, limit);
+    result[domain] = items;
   });
 
   return result;
