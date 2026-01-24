@@ -161,8 +161,25 @@ export function App(): JSX.Element {
     [events]
   );
   const topIntentionsByDomain = useMemo(
-    () => aggregateTopIntentionsByDomain(events, 5),
-    [events]
+    () => {
+      const now = Date.now();
+      let fromTimestamp: number | undefined;
+      if (range === "24h") {
+        fromTimestamp = now - 24 * 60 * 60 * 1000;
+      } else if (range === "7d") {
+        fromTimestamp = now - 7 * 24 * 60 * 60 * 1000;
+      } else if (range === "30d") {
+        fromTimestamp = now - 30 * 24 * 60 * 60 * 1000;
+      } else if (range === "3m") {
+        fromTimestamp = now - 90 * 24 * 60 * 60 * 1000;
+      } else if (range === "6m") {
+        fromTimestamp = now - 180 * 24 * 60 * 60 * 1000;
+      } else if (range === "12m") {
+        fromTimestamp = now - 365 * 24 * 60 * 60 * 1000;
+      }
+      return aggregateTopIntentionsByDomain(events, 5, fromTimestamp);
+    },
+    [events, range]
   );
 
   const domains = useMemo(

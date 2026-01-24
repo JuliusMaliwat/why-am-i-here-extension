@@ -146,12 +146,16 @@ export function aggregateHourlyCountsByDomain(
 
 export function aggregateTopIntentionsByDomain(
   events: EventRecord[],
-  limit = 5
+  limit = 5,
+  fromTimestamp?: number
 ): Record<string, TopIntention[]> {
   const map: DomainIntentionMap = {};
 
   events.forEach((event) => {
     if (event.type !== "intention_submitted" || !event.intention) {
+      return;
+    }
+    if (fromTimestamp && event.timestamp < fromTimestamp) {
       return;
     }
     const normalized = event.intention
