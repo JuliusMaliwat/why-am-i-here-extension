@@ -180,7 +180,7 @@
   * Output: toggle near chart to switch views
   * DoD: default Rate; user can switch; state persists during session
 
-* [ ] **Insights v0: breakdown stacked area**
+* [x] **Insights v0: breakdown stacked area**
 
   * Output: stacked area for Intentions + No-intention counts
   * DoD: stacked total equals opens; colors match design
