@@ -155,7 +155,7 @@
   * Output: block submit when intention is too short (default 6 chars)
   * DoD: inline hint explains requirement; applies to initial + re-prompt submit
 
-* [ ] **Insights v0: low-signal intention heuristic (simple)**
+* [x] **Insights v0: low-signal intention heuristic (simple)**
 
   * Output: reject obvious gibberish (e.g. low letter ratio, excessive repeats)
   * DoD: gentle message; still allows valid short phrases like “ok” only if >= min length
