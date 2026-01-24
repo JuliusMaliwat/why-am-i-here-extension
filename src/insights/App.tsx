@@ -661,6 +661,30 @@ export function App(): JSX.Element {
               cy={breakdownPoints[hoverIndex].yTotal}
               r={5}
             />
+            <g
+              className="chart-tooltip"
+              transform={`translate(${Math.min(
+                Math.max(
+                  chartLayout.padX,
+                  breakdownPoints[hoverIndex].x - 80
+                ),
+                chartLayout.width - chartLayout.padX - 180
+              )},${Math.max(
+                chartLayout.padY,
+                breakdownPoints[hoverIndex].yTotal - 84
+              )})`}
+            >
+              <rect width="180" height="76" rx="14" />
+              <text x="12" y="20" className="tooltip-label">
+                {formatLabel(breakdownPoints[hoverIndex].label)}
+              </text>
+              <text x="12" y="44" className="tooltip-detail">
+                Intentions: {breakdownPoints[hoverIndex].intentions}
+              </text>
+              <text x="12" y="62" className="tooltip-detail">
+                No-intention: {breakdownPoints[hoverIndex].noIntention}
+              </text>
+            </g>
           </g>
         )}
       </svg>

@@ -185,7 +185,7 @@
   * Output: stacked area for Intentions + No-intention counts
   * DoD: stacked total equals opens; colors match design
 
-* [ ] **Insights v0: tooltip + legend update**
+* [x] **Insights v0: tooltip + legend update**
 
   * Output: tooltip and legend adapt to view
   * DoD: Rate shows % + "x / y opens"; Breakdown shows both counts
