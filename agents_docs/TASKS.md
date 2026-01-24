@@ -170,6 +170,31 @@
   * Output: extra confirmation when no timer is selected
   * DoD: minimal friction (one-step), only on no-timer path, easy to dismiss
 
+* [ ] **Insights v0: metric simplification (no-intention only)**
+
+  * Output: single metric (No-intention rate) in Insights
+  * DoD: dropdown shows only No-intention rate; default metric set accordingly
+
+* [ ] **Insights v0: view toggle (Rate vs Breakdown)**
+
+  * Output: toggle near chart to switch views
+  * DoD: default Rate; user can switch; state persists during session
+
+* [ ] **Insights v0: breakdown stacked area**
+
+  * Output: stacked area for Intentions + No-intention counts
+  * DoD: stacked total equals opens; colors match design
+
+* [ ] **Insights v0: tooltip + legend update**
+
+  * Output: tooltip and legend adapt to view
+  * DoD: Rate shows % + "x / y opens"; Breakdown shows both counts
+
+* [ ] **Insights v0: axis scale handling**
+
+  * Output: axis switches between % and counts
+  * DoD: labels correct for active view
+
 * [ ] **Insights v1: active time tracking**
 
   * Output: active seconds per domain/session
