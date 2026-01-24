@@ -160,7 +160,7 @@
   * Output: reject obvious gibberish (e.g. low letter ratio, excessive repeats)
   * DoD: gentle message; still allows valid short phrases like “ok” only if >= min length
 
-* [ ] **Insights v0: no-timer reinforcement (lightweight)**
+* [x] **Insights v0: no-timer reinforcement (lightweight)**
 
   * Output: extra confirmation when no timer is selected
   * DoD: minimal friction (one-step), only on no-timer path, easy to dismiss
