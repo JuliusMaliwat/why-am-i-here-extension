@@ -49,11 +49,6 @@ export function App(): JSX.Element {
     };
   }, []);
 
-  const domainCountLabel = useMemo(() => {
-    if (domains.length === 0) return "No domains yet";
-    if (domains.length === 1) return "1 domain";
-    return `${domains.length} domains`;
-  }, [domains.length]);
 
   async function persist(nextDomains: string[]): Promise<void> {
     const normalized = uniqueDomains(nextDomains);
@@ -142,9 +137,8 @@ export function App(): JSX.Element {
         </div>
         <div className="hero-actions">
           <a className="insights-link" href="/insights.html">
-            Insights
+            <span className="insights-label">Insights</span>
           </a>
-          <div className="count-pill">{domainCountLabel}</div>
         </div>
       </div>
 
