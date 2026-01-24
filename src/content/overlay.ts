@@ -684,7 +684,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         return;
       }
       if (intention.length < MIN_INTENTION_LENGTH) {
-        error.textContent = "Add a bit more detail to continue.";
+        error.textContent = `Add at least ${MIN_INTENTION_LENGTH} characters to continue.`;
         error.style.display = "block";
         input.focus();
         updateTypingState();
