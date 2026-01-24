@@ -274,6 +274,11 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       cursor: text;
       user-select: none;
     }
+    .pill.is-error {
+      border-color: rgba(231, 197, 149, 0.7);
+      box-shadow: 0 0 0 3px rgba(231, 197, 149, 0.15),
+        0 20px 60px rgba(0, 0, 0, 0.18);
+    }
     .pill.is-pill {
       cursor: grab;
     }
@@ -331,10 +336,11 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       top: calc(100% + 2.2rem);
       left: 50%;
       transform: translateX(-50%);
-      color: #e7b3b3;
-      font-size: 0.85rem;
+      color: rgba(231, 197, 149, 0.85);
+      font-size: 0.8rem;
       margin: 0;
       min-height: 1.1em;
+      white-space: nowrap;
     }
     .timebox-row {
       position: absolute;
@@ -522,6 +528,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     overlay.style.display = "";
     error.style.display = "none";
     error.textContent = "";
+    pill.classList.remove("is-error");
     pill.classList.remove("is-pill");
     pill.classList.add("is-gate");
     input.readOnly = false;
@@ -658,6 +665,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       ) {
         error.textContent = "";
         error.style.display = "none";
+        pill.classList.remove("is-error");
       }
       updateTypingState();
       updateSizing();
@@ -679,6 +687,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       if (!intention) {
         error.textContent = "Add a short intention to continue.";
         error.style.display = "block";
+        pill.classList.add("is-error");
         input.focus();
         updateTypingState();
         return;
@@ -686,6 +695,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       if (intention.length < MIN_INTENTION_LENGTH) {
         error.textContent = `Add at least ${MIN_INTENTION_LENGTH} characters to continue.`;
         error.style.display = "block";
+        pill.classList.add("is-error");
         input.focus();
         updateTypingState();
         return;
@@ -724,6 +734,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
       overlay.style.display = "none";
       error.style.display = "none";
+      pill.classList.remove("is-error");
       timeboxRow.classList.remove("is-visible");
       input.value = intention;
       latestIntentionText = intention;
