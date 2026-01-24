@@ -369,110 +369,6 @@ export function App(): JSX.Element {
     });
   };
 
-  const renderHourlyBars = (): JSX.Element => {
-    const usableW = chartLayout.width - chartLayout.padX * 2;
-    const usableH = chartLayout.height - chartLayout.padY * 2;
-    const slot = usableW / series.length;
-    const barWidth = Math.min(14, slot * 0.6);
-    return (
-      <svg
-        viewBox="0 0 1000 220"
-        role="img"
-        className={`chart-svg ${metric}`}
-        onMouseMove={handleChartMove}
-        onMouseLeave={handleChartLeave}
-      >
-        <g className="axis-grid">
-          {getYTicks().map((tick) => (
-            <line
-              key={`y-${tick.value}`}
-              x1={chartLayout.padX}
-              x2={chartLayout.width - chartLayout.padX}
-              y1={tick.y}
-              y2={tick.y}
-            />
-          ))}
-        </g>
-        <g className="axis-labels">
-          {getYTicks().map((tick) => (
-            <text
-              key={`y-label-${tick.value}`}
-              x={chartLayout.padX - 10}
-              y={tick.y + 4}
-              textAnchor="end"
-            >
-              {formatAxisValue(tick.value)}
-            </text>
-          ))}
-          {getXTicks().map((tick) => (
-            <text
-              key={`x-label-${tick.x}`}
-              x={tick.x}
-              y={chartLayout.height - chartLayout.padY + 18}
-              textAnchor="middle"
-            >
-              {tick.label}
-            </text>
-          ))}
-        </g>
-        {series.map((point, index) => {
-          const x =
-            chartLayout.padX + index * slot + (slot - barWidth) / 2;
-          const value = chartPoints[index]?.value ?? 0;
-          const barHeight = usableH * (value / maxValue);
-          const barY = chartLayout.padY + (usableH - barHeight);
-          return (
-            <g key={point.hour}>
-              <rect
-                x={x}
-                y={barY}
-                width={barWidth}
-                height={barHeight}
-                className={`bar ${metric}`}
-              />
-            </g>
-          );
-        })}
-        {hoverIndex !== null && chartPoints[hoverIndex] && (
-          <g className="chart-focus">
-            <line
-              x1={chartPoints[hoverIndex].x}
-              x2={chartPoints[hoverIndex].x}
-              y1={chartLayout.padY}
-              y2={chartLayout.height - chartLayout.padY}
-            />
-            <circle
-              cx={chartPoints[hoverIndex].x}
-              cy={chartPoints[hoverIndex].y}
-              r={5}
-            />
-            <g
-              className="chart-tooltip"
-              transform={`translate(${Math.min(
-                Math.max(
-                  chartLayout.padX,
-                  chartPoints[hoverIndex].x - 80
-                ),
-                chartLayout.width - chartLayout.padX - 160
-              )},${Math.max(
-                chartLayout.padY,
-                chartPoints[hoverIndex].y - 70
-              )})`}
-            >
-              <rect width="160" height="56" rx="14" />
-              <text x="12" y="20" className="tooltip-label">
-                {formatLabel(chartPoints[hoverIndex].label)}
-              </text>
-              <text x="12" y="42" className="tooltip-value">
-                {formatValue(chartPoints[hoverIndex].value)}
-              </text>
-            </g>
-          </g>
-        )}
-      </svg>
-    );
-  };
-
   const renderDailyLines = (): JSX.Element => {
     if (chartPoints.length === 0) {
       return (
@@ -792,7 +688,7 @@ export function App(): JSX.Element {
               <p className="empty">Select at least one domain.</p>
             ) : (
               <div className="chart-wrap">
-                {isHourlyRange ? renderHourlyBars() : renderDailyLines()}
+                {renderDailyLines()}
                 <div className="legend">
                   <span className={`legend-item ${metric}`}>{metricLabel}</span>
                 </div>
