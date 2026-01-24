@@ -938,16 +938,21 @@ export function App(): JSX.Element {
                                     </span>
                                   </div>
                                   {variants.length > 0 && (
-                                    <div className="intentions-variants">
-                                      {variants.map((variant) => (
-                                        <span
-                                          key={`${domain}-${item.text}-${variant.text}`}
-                                          className="intentions-variant"
-                                        >
-                                          {variant.text} · {variant.count}
-                                        </span>
-                                      ))}
-                                    </div>
+                                    <details className="intentions-variants">
+                                      <summary className="intentions-variants-toggle">
+                                        View variants ({variants.length})
+                                      </summary>
+                                      <div className="intentions-variant-list">
+                                        {variants.map((variant) => (
+                                          <span
+                                            key={`${domain}-${item.text}-${variant.text}`}
+                                            className="intentions-variant"
+                                          >
+                                            {variant.text} · {variant.count}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </details>
                                   )}
                                 </li>
                               );

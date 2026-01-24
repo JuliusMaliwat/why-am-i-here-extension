@@ -204,7 +204,7 @@ function normalizeForSimilarity(text: string): string[] {
     if (token.length <= 4) {
       return token;
     }
-    return token.slice(0, 5);
+    return token.slice(0, 4);
   });
 }
 
@@ -222,6 +222,14 @@ function similarityScore(tokensA: string[], tokensB: string[]): number {
   });
   if (intersection === 0) {
     return 0;
+  }
+  const isSubset =
+    (tokensA.length <= tokensB.length &&
+      tokensA.every((token) => setB.has(token))) ||
+    (tokensB.length <= tokensA.length &&
+      tokensB.every((token) => setA.has(token)));
+  if (isSubset && intersection >= 1) {
+    return 1;
   }
   const union = setA.size + setB.size - intersection;
   const jaccard = intersection / union;
@@ -267,7 +275,7 @@ function groupIntentions(
       }
     });
 
-    if (bestScore >= 0.5 && bestIndex >= 0) {
+    if (bestScore >= 0.4 && bestIndex >= 0) {
       const cluster = clusters[bestIndex];
       cluster.total += count;
       const prevCount = cluster.variants.get(text) ?? 0;

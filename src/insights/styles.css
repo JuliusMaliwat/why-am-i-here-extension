@@ -602,6 +602,34 @@ svg {
 
 .intentions-variants {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.intentions-variants-toggle {
+  color: var(--text-2);
+  font-size: 0.72rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.intentions-variants-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.intentions-variants-toggle::after {
+  content: "▾";
+  margin-left: 6px;
+  font-size: 0.65rem;
+  color: var(--text-2);
+}
+
+.intentions-variants[open] .intentions-variants-toggle::after {
+  content: "▴";
+}
+
+.intentions-variant-list {
+  display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
