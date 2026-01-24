@@ -4,7 +4,7 @@ import {
   aggregateHourlyCountsByDomain,
   aggregateTopIntentionsByDomain
 } from "../shared/analytics";
-import { getEvents } from "../shared/storage";
+import { clearEvents, getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 
 type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
@@ -129,6 +129,7 @@ export function App(): JSX.Element {
   const rangeMenuRef = useRef<HTMLDivElement | null>(null);
   const hasInitializedDomains = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -522,6 +523,16 @@ export function App(): JSX.Element {
     setRangeMenuOpen(false);
   };
 
+  const handleClearAnalytics = async (): Promise<void> => {
+    try {
+      await clearEvents();
+      setEvents([]);
+      setShowClearConfirm(false);
+    } catch {
+      setError("Could not clear analytics. Try again.");
+    }
+  };
+
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent): void => {
       const target = event.target as Node;
@@ -583,12 +594,12 @@ export function App(): JSX.Element {
                   onClick={() => {
                     setMetricMenuOpen((open) => {
                       const next = !open;
-                        setDomainMenuOpen(false);
-                        setRangeMenuOpen(false);
-                        return next;
-                      });
-                    }}
-                  >
+                      setDomainMenuOpen(false);
+                      setRangeMenuOpen(false);
+                      return next;
+                    });
+                  }}
+                >
                     {metricLabel}
                   </button>
                   {metricMenuOpen && (
@@ -660,12 +671,12 @@ export function App(): JSX.Element {
                   onClick={() => {
                     setRangeMenuOpen((open) => {
                       const next = !open;
-                        setMetricMenuOpen(false);
-                        setDomainMenuOpen(false);
-                        return next;
-                      });
-                    }}
-                  >
+                      setMetricMenuOpen(false);
+                      setDomainMenuOpen(false);
+                      return next;
+                    });
+                  }}
+                >
                     {rangeLabel}
                   </button>
                   {rangeMenuOpen && (
@@ -753,6 +764,46 @@ export function App(): JSX.Element {
                 </div>
               </div>
             )}
+
+            <div className="danger-zone">
+              <div>
+                <h3>Reset analytics</h3>
+                <p className="panel-copy">
+                  Clears all local analytics data for this browser.
+                </p>
+              </div>
+              {showClearConfirm ? (
+                <div className="danger-actions">
+                  <div className="danger-confirm">
+                    <div className="danger-buttons">
+                      <button
+                        type="button"
+                        className="ghost"
+                        onClick={() => setShowClearConfirm(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() => void handleClearAnalytics()}
+                      >
+                        Clear now
+                      </button>
+                    </div>
+                    <p className="danger-hint">This can&apos;t be undone.</p>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => setShowClearConfirm(true)}
+                >
+                  Clear analytics
+                </button>
+              )}
+            </div>
 
           </>
         )}

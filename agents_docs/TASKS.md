@@ -150,7 +150,7 @@
   * Output: top 5 intentions per domain
   * DoD: normalized by lowercase + trim + collapsed spaces
 
-* [ ] **Insights v0: clear analytics (full reset)**
+* [x] **Insights v0: clear analytics (full reset)**
 
   * Output: user can clear all analytics data from Insights page
   * DoD: confirmation step; clears events; UI reflects empty state

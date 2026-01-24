@@ -74,6 +74,15 @@ export async function appendEvent(event: EventRecord): Promise<void> {
   localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
 }
 
+export async function clearEvents(): Promise<void> {
+  if (hasChromeStorage()) {
+    await chrome.storage.local.set({ [EVENTS_KEY]: [] });
+    return;
+  }
+
+  localStorage.setItem(EVENTS_KEY, JSON.stringify([]));
+}
+
 export async function getActiveIntention(
   tabId: number
 ): Promise<ActiveIntentionState | null> {
