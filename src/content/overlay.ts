@@ -388,6 +388,41 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       min-height: 1.1em;
       white-space: nowrap;
     }
+    .no-timer {
+      position: absolute;
+      top: calc(100% + 2.2rem);
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      color: rgba(23, 26, 29, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      font-size: 0.78rem;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+      white-space: nowrap;
+    }
+    .no-timer button {
+      border: none;
+      background: transparent;
+      color: rgba(23, 26, 29, 0.8);
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .no-timer .confirm {
+      background: rgba(231, 197, 149, 0.35);
+      color: rgba(23, 26, 29, 0.95);
+    }
+    .no-timer .secondary {
+      background: rgba(23, 26, 29, 0.06);
+      color: rgba(23, 26, 29, 0.85);
+    }
     .timebox-row {
       position: absolute;
       top: calc(100% + 0.45rem);
@@ -402,6 +437,12 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     }
     .timebox-row.is-visible {
       display: inline-flex;
+    }
+    .timebox-row.is-highlight {
+      box-shadow: 0 0 0 2px rgba(231, 197, 149, 0.2),
+        0 10px 20px rgba(0, 0, 0, 0.2);
+      border-radius: 999px;
+      padding: 2px 6px;
     }
     .timebox-chip {
       border: none;
@@ -482,6 +523,20 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
   const error = document.createElement("p");
   error.className = "error";
+
+  const noTimerPrompt = document.createElement("div");
+  noTimerPrompt.className = "no-timer";
+  const noTimerText = document.createElement("span");
+  noTimerText.textContent = "Continue without a timer?";
+  const noTimerContinue = document.createElement("button");
+  noTimerContinue.className = "confirm";
+  noTimerContinue.type = "button";
+  noTimerContinue.textContent = "Continue";
+  const noTimerSetTimer = document.createElement("button");
+  noTimerSetTimer.className = "secondary";
+  noTimerSetTimer.type = "button";
+  noTimerSetTimer.textContent = "Set timer";
+  noTimerPrompt.append(noTimerText, noTimerContinue, noTimerSetTimer);
 
   const sizer = document.createElement("span");
   sizer.className = "sizer";
@@ -574,6 +629,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     overlay.style.display = "";
     error.style.display = "none";
     error.textContent = "";
+    noTimerPrompt.style.display = "none";
     pill.classList.remove("is-error");
     pill.classList.remove("is-pill");
     pill.classList.add("is-gate");
@@ -717,6 +773,9 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         error.style.display = "none";
         pill.classList.remove("is-error");
       }
+      if (noTimerPrompt.style.display === "flex") {
+        noTimerPrompt.style.display = "none";
+      }
       updateTypingState();
       updateSizing();
     });
@@ -729,9 +788,10 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       input.focus();
     }, 0);
 
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
+    const attemptSubmit = (allowNoTimer: boolean): void => {
       error.textContent = "";
+      error.style.display = "none";
+      noTimerPrompt.style.display = "none";
 
       const intention = input.value.trim();
       if (!intention) {
@@ -776,6 +836,10 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
       const timestamp = Date.now();
       const minutes = Number(form.dataset.timerMinutes || 0);
+      if (minutes === 0 && !allowNoTimer) {
+        noTimerPrompt.style.display = "flex";
+        return;
+      }
       const endsAt =
         minutes > 0 ? timestamp + minutes * 60 * 1000 : undefined;
 
@@ -821,6 +885,25 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
       unlockScroll();
       activeOverlayInput = null;
+    };
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      attemptSubmit(false);
+    });
+
+    noTimerContinue.addEventListener("click", () => {
+      attemptSubmit(true);
+    });
+
+    noTimerSetTimer.addEventListener("click", () => {
+      noTimerPrompt.style.display = "none";
+      timeboxRow.classList.add("is-visible");
+      timeboxRow.classList.add("is-highlight");
+      window.setTimeout(() => {
+        timeboxRow.classList.remove("is-highlight");
+      }, 1200);
+      input.focus();
     });
   } else {
     input.value = intentionText ?? "";
@@ -837,7 +920,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
   if (mode === "gate") {
     form.append(input, button);
-    pill.append(form, timerText, error, timeboxRow);
+    pill.append(form, timerText, error, noTimerPrompt, timeboxRow);
     shadow.append(style, sizer, overlay, pill);
   } else {
     form.append(input);
