@@ -129,6 +129,10 @@ Users often open distracting sites reflexively and lose time without a goal. Har
   - Per-domain counts for opens and intention submissions.
   - Count of sessions where overlay appeared but intention was not submitted.
 
+See `docs/ANALYTICS_V0.md` and `docs/ANALYTICS_V1.md` for the staged insights plan.
+
+Delivery note: Insights will be a separate page, linked from the Options UI.
+
 ---
 
 ## 11) Data & Privacy Principles

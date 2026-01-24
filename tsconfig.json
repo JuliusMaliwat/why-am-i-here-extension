@@ -11,5 +11,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src", "options.html"]
+  "include": ["src", "options.html", "insights.html"]
 }

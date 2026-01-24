@@ -160,3 +160,10 @@ If you change these later, update this file + log it in `docs/DECISIONS.md`.
 - Track **timer_started** and **timer_expired** events.
 
 ---
+
+## Analytics Notes
+See `docs/ANALYTICS_V0.md` and `docs/ANALYTICS_V1.md` for the staged insights plan.
+
+Delivery note: Insights should be a separate page linked from Options.
+
+---

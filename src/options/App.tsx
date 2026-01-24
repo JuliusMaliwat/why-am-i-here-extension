@@ -49,11 +49,6 @@ export function App(): JSX.Element {
     };
   }, []);
 
-  const domainCountLabel = useMemo(() => {
-    if (domains.length === 0) return "No domains yet";
-    if (domains.length === 1) return "1 domain";
-    return `${domains.length} domains`;
-  }, [domains.length]);
 
   async function persist(nextDomains: string[]): Promise<void> {
     const normalized = uniqueDomains(nextDomains);
@@ -140,7 +135,11 @@ export function App(): JSX.Element {
             Pick the places where you want a gentle intention check.
           </p>
         </div>
-        <div className="count-pill">{domainCountLabel}</div>
+        <div className="hero-actions">
+          <a className="insights-link" href="/insights.html">
+            <span className="insights-label">Insights</span>
+          </a>
+        </div>
       </div>
 
       <section className="panel">

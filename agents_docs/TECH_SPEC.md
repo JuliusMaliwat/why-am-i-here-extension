@@ -90,6 +90,12 @@ A separate extension page that reads the Usage Store and aggregates:
 * intentions submitted
 * (future) timer expirations
 
+See `docs/ANALYTICS_V0.md` and `docs/ANALYTICS_V1.md` for staged analytics scope.
+
+Note: Analytics v0 includes an hourly toggle (last 24h) in addition to daily trends.
+
+Decision: Insights live on a separate page, linked from the Options UI.
+
 ## 3) Data Model (Conceptual)
 
 ### Config

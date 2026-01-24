@@ -123,6 +123,11 @@ The insights page is meant to be reflective, not judgmental:
 
 ---
 
+## Analytics Notes
+See `docs/ANALYTICS_V0.md` and `docs/ANALYTICS_V1.md` for the staged insights plan.
+
+---
+
 ## Product Principles
 - **Gentle, not punitive**: this is not a “hard blocker”, it’s a mindfulness tool.
 - **Low friction**: the intention entry should be fast and simple.

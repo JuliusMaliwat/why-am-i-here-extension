@@ -7,7 +7,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        options: resolve(__dirname, "options.html")
+        options: resolve(__dirname, "options.html"),
+        insights: resolve(__dirname, "insights.html")
       },
       output: {
         entryFileNames: "assets/[name]-[hash].js",

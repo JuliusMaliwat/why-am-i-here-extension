@@ -115,9 +115,71 @@
 
 ## Milestone 3 — Bonus Insights
 
-* [ ] **Insights page skeleton**
-* [ ] **Aggregate per-domain counts**
-* [ ] **Show: opens proxy, submitted intentions, no-intention sessions**
+* [x] **Insights v0: data aggregation helpers**
+
+  * Output: helpers to aggregate per-domain daily counts
+  * DoD: uses `overlay_shown` + `intention_submitted` events only
+
+* [x] **Insights v0: domain trend chart UI**
+
+  * Output: multi-select domain trend chart (7/30/90 days)
+  * DoD: shows opens proxy + intentions submitted
+
+* [x] **Insights page entry (Options link)**
+
+  * Output: visible entry point from Options UI
+  * DoD: links to separate Insights page
+
+* [x] **Insights back link (return to Options)**
+
+  * Output: visible navigation back to Options
+  * DoD: link in Insights header returns to Options
+
+* [x] **Insights v0: hourly trend toggle**
+
+  * Output: optional hourly view for last 24h (and/or last 7d)
+  * DoD: hourly chart (bar or heatmap) per selected domains
+
+* [x] **Insights v0: no-intention rate**
+
+  * Output: percentage of opens without submission per domain
+  * DoD: formula = (overlay_shown - intention_submitted) / overlay_shown
+
+* [x] **Insights v0: top intentions list**
+
+  * Output: top 5 intentions per domain
+  * DoD: normalized by lowercase + trim + collapsed spaces
+
+* [ ] **Insights v0: intention quality gate (min length)**
+
+  * Output: block submit when intention is too short (default 6 chars)
+  * DoD: inline hint explains requirement; applies to initial + re-prompt submit
+
+* [ ] **Insights v0: low-signal intention heuristic (simple)**
+
+  * Output: reject obvious gibberish (e.g. low letter ratio, excessive repeats)
+  * DoD: gentle message; still allows valid short phrases like “ok” only if >= min length
+
+* [ ] **Insights v0: no-timer reinforcement (lightweight)**
+
+  * Output: extra confirmation when no timer is selected
+  * DoD: minimal friction (one-step), only on no-timer path, easy to dismiss
+
+* [ ] **Insights v1: active time tracking**
+
+  * Output: active seconds per domain/session
+  * DoD: pause on tab inactive; resume on focus
+
+* [ ] **Insights v1: time spent chart**
+
+  * Output: per-domain time spent series
+  * DoD: uses active seconds aggregation
+
+* [ ] **Insights v1: suspect intention heuristic**
+
+  * Output: flag low-quality intentions (secondary signal)
+  * DoD: length < 8, low letter ratio, excessive repeats
+
 
 ---
 
