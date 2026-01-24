@@ -269,6 +269,29 @@ h1 {
   color: var(--accent-strong);
 }
 
+.view-toggle {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.view-toggle button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-1);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.view-toggle button.active {
+  background: rgba(231, 197, 149, 0.2);
+  color: var(--accent-strong);
+}
+
 .status {
   margin: 16px 0 0;
   color: var(--text-2);
@@ -340,6 +363,10 @@ svg {
   color: rgba(208, 159, 240, 0.8);
 }
 
+.chart-svg.breakdown {
+  color: rgba(231, 197, 149, 0.9);
+}
+
 .line {
   fill: none;
   stroke-width: 3;
@@ -376,6 +403,22 @@ svg {
 
 .area.no_intention_rate {
   color: rgba(208, 159, 240, 0.8);
+}
+
+.area.breakdown-intentions {
+  fill: rgba(141, 196, 255, 0.4);
+}
+
+.area.breakdown-no-intention {
+  fill: rgba(214, 108, 108, 0.35);
+}
+
+.line.breakdown-intentions {
+  stroke: rgba(141, 196, 255, 0.85);
+}
+
+.line.breakdown-total {
+  stroke: rgba(214, 108, 108, 0.7);
 }
 
 .chart-focus line {
@@ -467,6 +510,14 @@ svg {
 
 .legend-item.no_intention_rate::before {
   background: rgba(208, 159, 240, 0.8);
+}
+
+.legend-item.breakdown-intentions::before {
+  background: rgba(141, 196, 255, 0.85);
+}
+
+.legend-item.breakdown-no-intention::before {
+  background: rgba(214, 108, 108, 0.7);
 }
 
 .range-note {

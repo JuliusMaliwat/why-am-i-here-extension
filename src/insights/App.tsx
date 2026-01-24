@@ -8,7 +8,8 @@ import { clearEvents, getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 
 type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
-type MetricOption = "opens" | "intentions" | "no_intention_rate";
+type MetricOption = "no_intention_rate";
+type ViewMode = "rate" | "breakdown";
 
 type SeriesPoint = {
   date: string;
@@ -20,6 +21,25 @@ type HourlyPoint = {
   hour: string;
   overlayShown: number;
   intentionSubmitted: number;
+};
+
+type RatePoint = {
+  x: number;
+  y: number;
+  value: number;
+  label: string;
+  overlayShown: number;
+  intentionSubmitted: number;
+};
+
+type BreakdownPoint = {
+  x: number;
+  yIntentions: number;
+  yTotal: number;
+  label: string;
+  intentions: number;
+  noIntention: number;
+  total: number;
 };
 
 function buildHourKeys(hours: number): string[] {
@@ -119,12 +139,11 @@ export function App(): JSX.Element {
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [range, setRange] = useState<RangeOption>("30d");
-  const [metric, setMetric] = useState<MetricOption>("no_intention_rate");
+  const metric: MetricOption = "no_intention_rate";
+  const [viewMode, setViewMode] = useState<ViewMode>("rate");
   const [domainMenuOpen, setDomainMenuOpen] = useState(false);
-  const [metricMenuOpen, setMetricMenuOpen] = useState(false);
   const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const metricMenuRef = useRef<HTMLDivElement | null>(null);
   const domainMenuRef = useRef<HTMLDivElement | null>(null);
   const rangeMenuRef = useRef<HTMLDivElement | null>(null);
   const hasInitializedDomains = useRef(false);
@@ -204,12 +223,6 @@ export function App(): JSX.Element {
     { id: "all", label: "All time" }
   ];
 
-  const metricOptions: { id: MetricOption; label: string }[] = [
-    { id: "opens", label: "Opens" },
-    { id: "intentions", label: "Intentions submitted" },
-    { id: "no_intention_rate", label: "No-intention rate" }
-  ];
-
   const isHourlyRange = range === "24h";
 
   const rangeDays = useMemo(() => {
@@ -237,16 +250,11 @@ export function App(): JSX.Element {
     return buildSeries(dailyByDomain, selectedDomains, rangeDays);
   }, [dailyByDomain, hourlyByDomain, selectedDomains, rangeDays, isHourlyRange]);
 
-  const maxValue = useMemo(() => {
-    if (metric === "no_intention_rate") {
-      return 100;
-    }
-    const values = series.map((point) => {
-      if (metric === "opens") return point.overlayShown;
-      return point.intentionSubmitted;
-    });
+  const rateMaxValue = 100;
+  const breakdownMaxValue = useMemo(() => {
+    const values = series.map((point) => point.overlayShown);
     return Math.max(1, ...values);
-  }, [series, metric]);
+  }, [series]);
 
   const chartLayout = {
     width: 1000,
@@ -255,7 +263,7 @@ export function App(): JSX.Element {
     padY: 24
   };
 
-  const chartPoints = useMemo(() => {
+  const ratePoints = useMemo<RatePoint[]>(() => {
     if (series.length === 0) {
       return [];
     }
@@ -263,18 +271,13 @@ export function App(): JSX.Element {
     const usableH = chartLayout.height - chartLayout.padY * 2;
     return series.map((point, index) => {
       const x = chartLayout.padX + (usableW * index) / (series.length - 1);
-      let value = point.overlayShown;
-      if (metric === "intentions") {
-        value = point.intentionSubmitted;
-      } else if (metric === "no_intention_rate") {
-        value =
-          point.overlayShown > 0
-            ? ((point.overlayShown - point.intentionSubmitted) /
-                point.overlayShown) *
-              100
-            : 0;
-      }
-      const y = chartLayout.padY + usableH * (1 - value / maxValue);
+      const value =
+        point.overlayShown > 0
+          ? ((point.overlayShown - point.intentionSubmitted) /
+              point.overlayShown) *
+            100
+          : 0;
+      const y = chartLayout.padY + usableH * (1 - value / rateMaxValue);
       const label = "hour" in point ? point.hour : point.date;
       return {
         x,
@@ -285,17 +288,43 @@ export function App(): JSX.Element {
         intentionSubmitted: point.intentionSubmitted
       };
     });
-  }, [series, metric, maxValue, chartLayout]);
+  }, [series, chartLayout]);
 
-  const formatValue = (value: number): string => {
-    if (metric === "no_intention_rate") {
-      return `${Math.round(value)}%`;
+  const breakdownPoints = useMemo<BreakdownPoint[]>(() => {
+    if (series.length === 0) {
+      return [];
     }
-    return `${Math.round(value)}`;
-  };
+    const usableW = chartLayout.width - chartLayout.padX * 2;
+    const usableH = chartLayout.height - chartLayout.padY * 2;
+    return series.map((point, index) => {
+      const x = chartLayout.padX + (usableW * index) / (series.length - 1);
+      const total = point.overlayShown;
+      const intentions = point.intentionSubmitted;
+      const noIntention = Math.max(0, total - intentions);
+      const yTotal =
+        chartLayout.padY + usableH * (1 - total / breakdownMaxValue);
+      const yIntentions =
+        chartLayout.padY + usableH * (1 - intentions / breakdownMaxValue);
+      const label = "hour" in point ? point.hour : point.date;
+      return {
+        x,
+        yIntentions,
+        yTotal,
+        label,
+        intentions,
+        noIntention,
+        total
+      };
+    });
+  }, [series, chartLayout, breakdownMaxValue]);
+
+  const activePoints = viewMode === "breakdown" ? breakdownPoints : ratePoints;
+  const axisMax = viewMode === "breakdown" ? breakdownMaxValue : rateMaxValue;
+
+  const formatValue = (value: number): string => `${Math.round(value)}%`;
 
   const formatAxisValue = (value: number): string => {
-    if (metric === "no_intention_rate") {
+    if (viewMode === "rate") {
       return `${Math.round(value)}%`;
     }
     if (value >= 1000) {
@@ -343,20 +372,22 @@ export function App(): JSX.Element {
     return `${noIntentionCount} / ${overlayShown} opens`;
   };
 
-  const getXTicks = (): { x: number; label: string }[] => {
-    if (chartPoints.length === 0) {
+  const getXTicks = (
+    points: { x: number; label: string }[]
+  ): { x: number; label: string }[] => {
+    if (points.length === 0) {
       return [];
     }
     const minGap = isHourlyRange ? 70 : 90;
     const ticks: { x: number; label: string }[] = [];
     let lastX = -Infinity;
-    chartPoints.forEach((point, index) => {
+    points.forEach((point, index) => {
       if (index === 0 || point.x - lastX >= minGap) {
         ticks.push({ x: point.x, label: formatLabel(point.label) });
         lastX = point.x;
       }
     });
-    const lastPoint = chartPoints[chartPoints.length - 1];
+    const lastPoint = points[points.length - 1];
     if (ticks.length === 0 || ticks[ticks.length - 1].x !== lastPoint.x) {
       ticks.push({ x: lastPoint.x, label: formatLabel(lastPoint.label) });
     }
@@ -364,17 +395,19 @@ export function App(): JSX.Element {
   };
 
   const getYTicks = (): { y: number; value: number }[] => {
-    const ticks = [0, Math.round(maxValue / 2), Math.round(maxValue)];
+    const ticks = [0, Math.round(axisMax / 2), Math.round(axisMax)];
     return ticks.map((value) => ({
       value,
-      y: chartLayout.padY + (chartLayout.height - chartLayout.padY * 2) * (1 - value / maxValue)
+      y:
+        chartLayout.padY +
+        (chartLayout.height - chartLayout.padY * 2) * (1 - value / axisMax)
     }));
   };
 
   const handleChartMove = (
     event: React.MouseEvent<SVGSVGElement>
   ): void => {
-    if (chartPoints.length === 0) {
+    if (activePoints.length === 0) {
       return;
     }
     const rect = event.currentTarget.getBoundingClientRect();
@@ -387,7 +420,7 @@ export function App(): JSX.Element {
     );
     const index = Math.round(
       ((clampedX - chartLayout.padX) / usableW) *
-        Math.max(1, chartPoints.length - 1)
+        Math.max(1, activePoints.length - 1)
     );
     setHoverIndex(index);
   };
@@ -405,24 +438,24 @@ export function App(): JSX.Element {
     });
   };
 
-  const renderDailyLines = (): JSX.Element => {
-    if (chartPoints.length === 0) {
+  const renderRateChart = (): JSX.Element => {
+    if (ratePoints.length === 0) {
       return (
         <svg viewBox="0 0 1000 220" role="img">
           <polyline className={`line ${metric}`} points="" />
         </svg>
       );
     }
-    const linePath = chartPoints
+    const linePath = ratePoints
       .map((point) => `${point.x},${point.y}`)
       .join(" ");
     const areaPath = [
-      `M ${chartPoints[0].x} ${chartPoints[0].y}`,
-      ...chartPoints.slice(1).map((point) => `L ${point.x} ${point.y}`),
-      `L ${chartPoints[chartPoints.length - 1].x} ${
+      `M ${ratePoints[0].x} ${ratePoints[0].y}`,
+      ...ratePoints.slice(1).map((point) => `L ${point.x} ${point.y}`),
+      `L ${ratePoints[ratePoints.length - 1].x} ${
         chartLayout.height - chartLayout.padY
       }`,
-      `L ${chartPoints[0].x} ${chartLayout.height - chartLayout.padY}`,
+      `L ${ratePoints[0].x} ${chartLayout.height - chartLayout.padY}`,
       "Z"
     ].join(" ");
     return (
@@ -455,7 +488,7 @@ export function App(): JSX.Element {
               {formatAxisValue(tick.value)}
             </text>
           ))}
-          {getXTicks().map((tick) => (
+          {getXTicks(ratePoints).map((tick) => (
             <text
               key={`x-label-${tick.x}`}
               x={tick.x}
@@ -484,17 +517,17 @@ export function App(): JSX.Element {
           fill="url(#chart-area-gradient)"
         />
         <polyline className={`line ${metric}`} points={linePath} />
-        {hoverIndex !== null && chartPoints[hoverIndex] && (
+        {hoverIndex !== null && ratePoints[hoverIndex] && (
           <g className="chart-focus">
             <line
-              x1={chartPoints[hoverIndex].x}
-              x2={chartPoints[hoverIndex].x}
+              x1={ratePoints[hoverIndex].x}
+              x2={ratePoints[hoverIndex].x}
               y1={chartLayout.padY}
               y2={chartLayout.height - chartLayout.padY}
             />
             <circle
-              cx={chartPoints[hoverIndex].x}
-              cy={chartPoints[hoverIndex].y}
+              cx={ratePoints[hoverIndex].x}
+              cy={ratePoints[hoverIndex].y}
               r={5}
             />
             <g
@@ -502,33 +535,31 @@ export function App(): JSX.Element {
               transform={`translate(${Math.min(
                 Math.max(
                   chartLayout.padX,
-                  chartPoints[hoverIndex].x - 80
+                  ratePoints[hoverIndex].x - 80
                 ),
                 chartLayout.width - chartLayout.padX - 160
               )},${Math.max(
                 chartLayout.padY,
-                chartPoints[hoverIndex].y - 70
+                ratePoints[hoverIndex].y - 70
               )})`}
             >
               <rect
                 width="160"
-                height={metric === "no_intention_rate" ? 72 : 56}
+                height={72}
                 rx="14"
               />
               <text x="12" y="20" className="tooltip-label">
-                {formatLabel(chartPoints[hoverIndex].label)}
+                {formatLabel(ratePoints[hoverIndex].label)}
               </text>
               <text x="12" y="42" className="tooltip-value">
-                {formatValue(chartPoints[hoverIndex].value)}
+                {formatValue(ratePoints[hoverIndex].value)}
               </text>
-              {metric === "no_intention_rate" && (
-                <text x="12" y="60" className="tooltip-detail">
-                  {formatNoIntentionDetail(
-                    chartPoints[hoverIndex].overlayShown,
-                    chartPoints[hoverIndex].intentionSubmitted
-                  )}
-                </text>
-              )}
+              <text x="12" y="60" className="tooltip-detail">
+                {formatNoIntentionDetail(
+                  ratePoints[hoverIndex].overlayShown,
+                  ratePoints[hoverIndex].intentionSubmitted
+                )}
+              </text>
             </g>
           </g>
         )}
@@ -536,8 +567,131 @@ export function App(): JSX.Element {
     );
   };
 
-  const metricLabel =
-    metricOptions.find((option) => option.id === metric)?.label ?? "Metric";
+  const renderBreakdownChart = (): JSX.Element => {
+    if (breakdownPoints.length === 0) {
+      return (
+        <svg viewBox="0 0 1000 220" role="img">
+          <polyline className="line breakdown-total" points="" />
+        </svg>
+      );
+    }
+    const totalPath = breakdownPoints
+      .map((point) => `${point.x},${point.yTotal}`)
+      .join(" ");
+    const intentionsPath = breakdownPoints
+      .map((point) => `${point.x},${point.yIntentions}`)
+      .join(" ");
+    const intentionsArea = [
+      `M ${breakdownPoints[0].x} ${breakdownPoints[0].yIntentions}`,
+      ...breakdownPoints
+        .slice(1)
+        .map((point) => `L ${point.x} ${point.yIntentions}`),
+      `L ${breakdownPoints[breakdownPoints.length - 1].x} ${
+        chartLayout.height - chartLayout.padY
+      }`,
+      `L ${breakdownPoints[0].x} ${chartLayout.height - chartLayout.padY}`,
+      "Z"
+    ].join(" ");
+    const noIntentionArea = [
+      `M ${breakdownPoints[0].x} ${breakdownPoints[0].yTotal}`,
+      ...breakdownPoints
+        .slice(1)
+        .map((point) => `L ${point.x} ${point.yTotal}`),
+      ...breakdownPoints
+        .slice()
+        .reverse()
+        .map((point) => `L ${point.x} ${point.yIntentions}`),
+      "Z"
+    ].join(" ");
+    return (
+      <svg
+        viewBox="0 0 1000 220"
+        role="img"
+        className="chart-svg breakdown"
+        onMouseMove={handleChartMove}
+        onMouseLeave={handleChartLeave}
+      >
+        <g className="axis-grid">
+          {getYTicks().map((tick) => (
+            <line
+              key={`y-${tick.value}`}
+              x1={chartLayout.padX}
+              x2={chartLayout.width - chartLayout.padX}
+              y1={tick.y}
+              y2={tick.y}
+            />
+          ))}
+        </g>
+        <g className="axis-labels">
+          {getYTicks().map((tick) => (
+            <text
+              key={`y-label-${tick.value}`}
+              x={chartLayout.padX - 10}
+              y={tick.y + 4}
+              textAnchor="end"
+            >
+              {formatAxisValue(tick.value)}
+            </text>
+          ))}
+          {getXTicks(breakdownPoints).map((tick) => (
+            <text
+              key={`x-label-${tick.x}`}
+              x={tick.x}
+              y={chartLayout.height - chartLayout.padY + 18}
+              textAnchor="middle"
+            >
+              {tick.label}
+            </text>
+          ))}
+        </g>
+        <path className="area breakdown-intentions" d={intentionsArea} />
+        <path className="area breakdown-no-intention" d={noIntentionArea} />
+        <polyline className="line breakdown-intentions" points={intentionsPath} />
+        <polyline className="line breakdown-total" points={totalPath} />
+        {hoverIndex !== null && breakdownPoints[hoverIndex] && (
+          <g className="chart-focus">
+            <line
+              x1={breakdownPoints[hoverIndex].x}
+              x2={breakdownPoints[hoverIndex].x}
+              y1={chartLayout.padY}
+              y2={chartLayout.height - chartLayout.padY}
+            />
+            <circle
+              cx={breakdownPoints[hoverIndex].x}
+              cy={breakdownPoints[hoverIndex].yTotal}
+              r={5}
+            />
+            <g
+              className="chart-tooltip"
+              transform={`translate(${Math.min(
+                Math.max(
+                  chartLayout.padX,
+                  breakdownPoints[hoverIndex].x - 80
+                ),
+                chartLayout.width - chartLayout.padX - 180
+              )},${Math.max(
+                chartLayout.padY,
+                breakdownPoints[hoverIndex].yTotal - 84
+              )})`}
+            >
+              <rect width="180" height="76" rx="14" />
+              <text x="12" y="20" className="tooltip-label">
+                {formatLabel(breakdownPoints[hoverIndex].label)}
+              </text>
+              <text x="12" y="44" className="tooltip-detail">
+                Intentions: {breakdownPoints[hoverIndex].intentions}
+              </text>
+              <text x="12" y="62" className="tooltip-detail">
+                No-intention: {breakdownPoints[hoverIndex].noIntention}
+              </text>
+            </g>
+          </g>
+        )}
+      </svg>
+    );
+  };
+
+  const metricLabel = "No-intention rate";
 
   const rangeLabel =
     rangeOptions.find((option) => option.id === range)?.label ?? "Time range";
@@ -549,7 +703,6 @@ export function App(): JSX.Element {
 
   const closeMenus = (): void => {
     setDomainMenuOpen(false);
-    setMetricMenuOpen(false);
     setRangeMenuOpen(false);
   };
 
@@ -566,7 +719,7 @@ export function App(): JSX.Element {
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent): void => {
       const target = event.target as Node;
-      const containers = [metricMenuRef, domainMenuRef, rangeMenuRef];
+      const containers = [domainMenuRef, rangeMenuRef];
       const isInside = containers.some((ref) => ref.current?.contains(target));
       if (!isInside) {
         closeMenus();
@@ -614,43 +767,22 @@ export function App(): JSX.Element {
           </div>
           <div className="panel-right">
             <div className="control-group">
-              <span className="control-label">Metric</span>
-              <div className="dropdown" ref={metricMenuRef}>
+              <span className="control-label">View</span>
+              <div className="view-toggle">
                 <button
                   type="button"
-                  className={`dropdown-button ${
-                    metricMenuOpen ? "open" : ""
-                  }`}
-                  onClick={() => {
-                    setMetricMenuOpen((open) => {
-                      const next = !open;
-                      setDomainMenuOpen(false);
-                      setRangeMenuOpen(false);
-                      return next;
-                    });
-                  }}
+                  className={viewMode === "rate" ? "active" : ""}
+                  onClick={() => setViewMode("rate")}
                 >
-                  <span className="metric-label">{metricLabel}</span>
+                  Rate
                 </button>
-                  {metricMenuOpen && (
-                  <div className="dropdown-menu">
-                    {metricOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className={
-                          option.id === metric ? "dropdown-item active" : "dropdown-item"
-                        }
-                        onClick={() => {
-                          setMetric(option.id);
-                          setMetricMenuOpen(false);
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  className={viewMode === "breakdown" ? "active" : ""}
+                  onClick={() => setViewMode("breakdown")}
+                >
+                  Breakdown
+                </button>
               </div>
             </div>
             {!isLoading && domains.length > 0 && (
@@ -665,7 +797,6 @@ export function App(): JSX.Element {
                     onClick={() => {
                       setDomainMenuOpen((open) => {
                         const next = !open;
-                        setMetricMenuOpen(false);
                         setRangeMenuOpen(false);
                         return next;
                       });
@@ -701,7 +832,6 @@ export function App(): JSX.Element {
                   onClick={() => {
                     setRangeMenuOpen((open) => {
                       const next = !open;
-                      setMetricMenuOpen(false);
                       setDomainMenuOpen(false);
                       return next;
                     });
@@ -746,18 +876,25 @@ export function App(): JSX.Element {
               <p className="empty">Select at least one domain.</p>
             ) : (
               <div className="chart-wrap">
-                {renderDailyLines()}
+                {viewMode === "breakdown" ? renderBreakdownChart() : renderRateChart()}
                 <div className="legend">
-                  <span
-                    className={`legend-item ${metric}`}
-                    data-tooltip={
-                      metric === "no_intention_rate"
-                        ? "Share of opens with no intention submitted."
-                        : undefined
-                    }
-                  >
-                    {metricLabel}
-                  </span>
+                  {viewMode === "breakdown" ? (
+                    <>
+                      <span className="legend-item breakdown-intentions">
+                        Intentions
+                      </span>
+                      <span className="legend-item breakdown-no-intention">
+                        No-intention
+                      </span>
+                    </>
+                  ) : (
+                    <span
+                      className={`legend-item ${metric}`}
+                      data-tooltip="Share of opens with no intention submitted."
+                    >
+                      {metricLabel}
+                    </span>
+                  )}
                 </div>
               </div>
             )}
