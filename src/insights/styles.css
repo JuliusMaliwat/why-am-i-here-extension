@@ -170,6 +170,11 @@ h1 {
   gap: 8px;
 }
 
+.metric-label {
+  display: inline-flex;
+  align-items: center;
+}
+
 .dropdown-button.open {
   border-color: rgba(231, 197, 149, 0.5);
   box-shadow: 0 0 0 1px rgba(231, 197, 149, 0.2);
@@ -414,6 +419,33 @@ svg {
   margin-top: 10px;
   color: var(--text-2);
   font-size: 0.8rem;
+}
+
+.legend-item[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+.legend-item[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  white-space: nowrap;
+  background: rgba(20, 23, 26, 0.95);
+  color: var(--text-0);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.legend-item[data-tooltip]:hover::after {
+  opacity: 1;
 }
 
 .legend-item::before {

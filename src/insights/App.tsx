@@ -630,8 +630,8 @@ export function App(): JSX.Element {
                     });
                   }}
                 >
-                    {metricLabel}
-                  </button>
+                  <span className="metric-label">{metricLabel}</span>
+                </button>
                   {metricMenuOpen && (
                   <div className="dropdown-menu">
                     {metricOptions.map((option) => (
@@ -748,7 +748,16 @@ export function App(): JSX.Element {
               <div className="chart-wrap">
                 {renderDailyLines()}
                 <div className="legend">
-                  <span className={`legend-item ${metric}`}>{metricLabel}</span>
+                  <span
+                    className={`legend-item ${metric}`}
+                    data-tooltip={
+                      metric === "no_intention_rate"
+                        ? "Share of opens with no intention submitted."
+                        : undefined
+                    }
+                  >
+                    {metricLabel}
+                  </span>
                 </div>
               </div>
             )}
