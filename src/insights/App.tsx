@@ -119,7 +119,7 @@ export function App(): JSX.Element {
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [range, setRange] = useState<RangeOption>("30d");
-  const [metric, setMetric] = useState<MetricOption>("opens");
+  const [metric, setMetric] = useState<MetricOption>("no_intention_rate");
   const [domainMenuOpen, setDomainMenuOpen] = useState(false);
   const [metricMenuOpen, setMetricMenuOpen] = useState(false);
   const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
