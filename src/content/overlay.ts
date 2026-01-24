@@ -7,6 +7,7 @@ const ACTIVE_INTENTION_KEY = "waih_active_intention";
 const SCROLL_LOCK_CLASS = "waih-scroll-lock";
 const SCROLL_LOCK_ATTR = "data-waih-scroll-lock";
 const SCROLL_TOP_ATTR = "data-waih-scroll-top";
+const MIN_INTENTION_LENGTH = 6;
 const PILL_POSITION_KEY = "waih_pill_position";
 let activeOverlayInput: HTMLInputElement | null = null;
 
@@ -519,7 +520,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     applyPillPosition(pill, position);
 
     overlay.style.display = "";
-    error.style.display = "";
+    error.style.display = "none";
+    error.textContent = "";
     pill.classList.remove("is-pill");
     pill.classList.add("is-gate");
     input.readOnly = false;
@@ -650,6 +652,13 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   let hasDrag = false;
   if (mode === "gate") {
     input.addEventListener("input", () => {
+      if (
+        error.textContent &&
+        input.value.trim().length >= MIN_INTENTION_LENGTH
+      ) {
+        error.textContent = "";
+        error.style.display = "none";
+      }
       updateTypingState();
       updateSizing();
     });
@@ -669,6 +678,14 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       const intention = input.value.trim();
       if (!intention) {
         error.textContent = "Add a short intention to continue.";
+        error.style.display = "block";
+        input.focus();
+        updateTypingState();
+        return;
+      }
+      if (intention.length < MIN_INTENTION_LENGTH) {
+        error.textContent = "Add a bit more detail to continue.";
+        error.style.display = "block";
         input.focus();
         updateTypingState();
         return;
