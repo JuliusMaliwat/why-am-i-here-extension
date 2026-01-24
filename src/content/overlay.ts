@@ -734,6 +734,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     preset.addEventListener("click", () => {
       const value = Number(preset.dataset.value || 0);
       setSelectedMinutes(value, "preset");
+      input.focus();
     });
   });
 
@@ -756,6 +757,13 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       customInput.value = String(value);
     }
     setSelectedMinutes(value, "custom");
+  });
+
+  customInput.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    input.focus();
+    form.requestSubmit();
   });
 
   let hasDrag = false;
