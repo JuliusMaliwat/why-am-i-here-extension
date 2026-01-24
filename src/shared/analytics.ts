@@ -1,3 +1,4 @@
+import * as lemmatizer from "wink-lemmatizer";
 import type { EventRecord } from "./types";
 
 export type DailyDomainCounts = {
@@ -200,12 +201,21 @@ function normalizeForSimilarity(text: string): string[] {
     .split(" ")
     .map((token) => token.trim())
     .filter((token) => token && !STOPWORDS.has(token));
-  return tokens.map((token) => {
-    if (token.length <= 4) {
-      return token;
-    }
-    return token.slice(0, 4);
-  });
+  return tokens.map(lemmatizeToken);
+}
+
+function lemmatizeToken(token: string): string {
+  const base = token.toLowerCase();
+  const candidates = [
+    lemmatizer.verb(base),
+    lemmatizer.noun(base),
+    lemmatizer.adjective(base),
+    base
+  ].filter(Boolean);
+  return candidates.reduce((best, current) => {
+    if (!best) return current;
+    return current.length < best.length ? current : best;
+  }, base);
 }
 
 function similarityScore(tokensA: string[], tokensB: string[]): number {
