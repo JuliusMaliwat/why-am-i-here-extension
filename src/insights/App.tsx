@@ -4,7 +4,7 @@ import {
   aggregateHourlyCountsByDomain,
   aggregateTopIntentionsByDomain
 } from "../shared/analytics";
-import { getEvents } from "../shared/storage";
+import { clearEvents, getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 
 type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
@@ -129,6 +129,7 @@ export function App(): JSX.Element {
   const rangeMenuRef = useRef<HTMLDivElement | null>(null);
   const hasInitializedDomains = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -275,7 +276,14 @@ export function App(): JSX.Element {
       }
       const y = chartLayout.padY + usableH * (1 - value / maxValue);
       const label = "hour" in point ? point.hour : point.date;
-      return { x, y, value, label };
+      return {
+        x,
+        y,
+        value,
+        label,
+        overlayShown: point.overlayShown,
+        intentionSubmitted: point.intentionSubmitted
+      };
     });
   }, [series, metric, maxValue, chartLayout]);
 
@@ -322,6 +330,17 @@ export function App(): JSX.Element {
       }
     }
     return label;
+  };
+
+  const formatNoIntentionDetail = (
+    overlayShown: number,
+    intentionSubmitted: number
+  ): string => {
+    if (overlayShown === 0) {
+      return "0 opens";
+    }
+    const noIntentionCount = Math.max(0, overlayShown - intentionSubmitted);
+    return `${noIntentionCount} / ${overlayShown} opens`;
   };
 
   const getXTicks = (): { x: number; label: string }[] => {
@@ -491,13 +510,25 @@ export function App(): JSX.Element {
                 chartPoints[hoverIndex].y - 70
               )})`}
             >
-              <rect width="160" height="56" rx="14" />
+              <rect
+                width="160"
+                height={metric === "no_intention_rate" ? 72 : 56}
+                rx="14"
+              />
               <text x="12" y="20" className="tooltip-label">
                 {formatLabel(chartPoints[hoverIndex].label)}
               </text>
               <text x="12" y="42" className="tooltip-value">
                 {formatValue(chartPoints[hoverIndex].value)}
               </text>
+              {metric === "no_intention_rate" && (
+                <text x="12" y="60" className="tooltip-detail">
+                  {formatNoIntentionDetail(
+                    chartPoints[hoverIndex].overlayShown,
+                    chartPoints[hoverIndex].intentionSubmitted
+                  )}
+                </text>
+              )}
             </g>
           </g>
         )}
@@ -520,6 +551,16 @@ export function App(): JSX.Element {
     setDomainMenuOpen(false);
     setMetricMenuOpen(false);
     setRangeMenuOpen(false);
+  };
+
+  const handleClearAnalytics = async (): Promise<void> => {
+    try {
+      await clearEvents();
+      setEvents([]);
+      setShowClearConfirm(false);
+    } catch {
+      setError("Could not clear analytics. Try again.");
+    }
   };
 
   useEffect(() => {
@@ -583,14 +624,14 @@ export function App(): JSX.Element {
                   onClick={() => {
                     setMetricMenuOpen((open) => {
                       const next = !open;
-                        setDomainMenuOpen(false);
-                        setRangeMenuOpen(false);
-                        return next;
-                      });
-                    }}
-                  >
-                    {metricLabel}
-                  </button>
+                      setDomainMenuOpen(false);
+                      setRangeMenuOpen(false);
+                      return next;
+                    });
+                  }}
+                >
+                  <span className="metric-label">{metricLabel}</span>
+                </button>
                   {metricMenuOpen && (
                   <div className="dropdown-menu">
                     {metricOptions.map((option) => (
@@ -660,12 +701,12 @@ export function App(): JSX.Element {
                   onClick={() => {
                     setRangeMenuOpen((open) => {
                       const next = !open;
-                        setMetricMenuOpen(false);
-                        setDomainMenuOpen(false);
-                        return next;
-                      });
-                    }}
-                  >
+                      setMetricMenuOpen(false);
+                      setDomainMenuOpen(false);
+                      return next;
+                    });
+                  }}
+                >
                     {rangeLabel}
                   </button>
                   {rangeMenuOpen && (
@@ -707,7 +748,16 @@ export function App(): JSX.Element {
               <div className="chart-wrap">
                 {renderDailyLines()}
                 <div className="legend">
-                  <span className={`legend-item ${metric}`}>{metricLabel}</span>
+                  <span
+                    className={`legend-item ${metric}`}
+                    data-tooltip={
+                      metric === "no_intention_rate"
+                        ? "Share of opens with no intention submitted."
+                        : undefined
+                    }
+                  >
+                    {metricLabel}
+                  </span>
                 </div>
               </div>
             )}
@@ -753,6 +803,46 @@ export function App(): JSX.Element {
                 </div>
               </div>
             )}
+
+            <div className="danger-zone">
+              <div>
+                <h3>Reset analytics</h3>
+                <p className="panel-copy">
+                  Clears all local analytics data for this browser.
+                </p>
+              </div>
+              {showClearConfirm ? (
+                <div className="danger-actions">
+                  <div className="danger-confirm">
+                    <div className="danger-buttons">
+                      <button
+                        type="button"
+                        className="ghost"
+                        onClick={() => setShowClearConfirm(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() => void handleClearAnalytics()}
+                      >
+                        Clear now
+                      </button>
+                    </div>
+                    <p className="danger-hint">This can&apos;t be undone.</p>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => setShowClearConfirm(true)}
+                >
+                  Clear analytics
+                </button>
+              )}
+            </div>
 
           </>
         )}

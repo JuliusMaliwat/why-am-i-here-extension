@@ -150,6 +150,11 @@
   * Output: top 5 intentions per domain
   * DoD: normalized by lowercase + trim + collapsed spaces
 
+* [x] **Insights v0: clear analytics (full reset)**
+
+  * Output: user can clear all analytics data from Insights page
+  * DoD: confirmation step; clears events; UI reflects empty state
+
 * [x] **Insights v0: intention quality gate (min length)**
 
   * Output: block submit when intention is too short (default 6 chars)

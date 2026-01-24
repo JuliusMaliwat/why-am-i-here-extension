@@ -170,6 +170,11 @@ h1 {
   gap: 8px;
 }
 
+.metric-label {
+  display: inline-flex;
+  align-items: center;
+}
+
 .dropdown-button.open {
   border-color: rgba(231, 197, 149, 0.5);
   box-shadow: 0 0 0 1px rgba(231, 197, 149, 0.2);
@@ -399,6 +404,11 @@ svg {
   font-weight: 600;
 }
 
+.chart-tooltip .tooltip-detail {
+  fill: var(--text-2);
+  font-size: 0.7rem;
+}
+
 .chart-tooltip {
   backdrop-filter: blur(8px);
 }
@@ -409,6 +419,33 @@ svg {
   margin-top: 10px;
   color: var(--text-2);
   font-size: 0.8rem;
+}
+
+.legend-item[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+.legend-item[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  white-space: nowrap;
+  background: rgba(20, 23, 26, 0.95);
+  color: var(--text-0);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.legend-item[data-tooltip]:hover::after {
+  opacity: 1;
 }
 
 .legend-item::before {
@@ -504,6 +541,68 @@ svg {
   color: var(--text-2);
   font-size: 0.75rem;
   flex-shrink: 0;
+}
+
+.danger-zone {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.danger-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.danger-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.danger-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.danger-hint {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.75rem;
+}
+
+button.danger {
+  border: 1px solid rgba(185, 87, 87, 0.45);
+  background: rgba(185, 87, 87, 0.2);
+  color: #f3c2c2;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+button.ghost {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: var(--text-1);
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+button.danger:hover,
+button.ghost:hover {
+  transform: translateY(-1px);
 }
 
 @media (max-width: 720px) {
