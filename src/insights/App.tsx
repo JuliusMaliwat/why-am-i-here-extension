@@ -276,7 +276,14 @@ export function App(): JSX.Element {
       }
       const y = chartLayout.padY + usableH * (1 - value / maxValue);
       const label = "hour" in point ? point.hour : point.date;
-      return { x, y, value, label };
+      return {
+        x,
+        y,
+        value,
+        label,
+        overlayShown: point.overlayShown,
+        intentionSubmitted: point.intentionSubmitted
+      };
     });
   }, [series, metric, maxValue, chartLayout]);
 
@@ -323,6 +330,17 @@ export function App(): JSX.Element {
       }
     }
     return label;
+  };
+
+  const formatNoIntentionDetail = (
+    overlayShown: number,
+    intentionSubmitted: number
+  ): string => {
+    if (overlayShown === 0) {
+      return "0 opens";
+    }
+    const noIntentionCount = Math.max(0, overlayShown - intentionSubmitted);
+    return `${noIntentionCount} / ${overlayShown} opens`;
   };
 
   const getXTicks = (): { x: number; label: string }[] => {
@@ -492,13 +510,25 @@ export function App(): JSX.Element {
                 chartPoints[hoverIndex].y - 70
               )})`}
             >
-              <rect width="160" height="56" rx="14" />
+              <rect
+                width="160"
+                height={metric === "no_intention_rate" ? 72 : 56}
+                rx="14"
+              />
               <text x="12" y="20" className="tooltip-label">
                 {formatLabel(chartPoints[hoverIndex].label)}
               </text>
               <text x="12" y="42" className="tooltip-value">
                 {formatValue(chartPoints[hoverIndex].value)}
               </text>
+              {metric === "no_intention_rate" && (
+                <text x="12" y="60" className="tooltip-detail">
+                  {formatNoIntentionDetail(
+                    chartPoints[hoverIndex].overlayShown,
+                    chartPoints[hoverIndex].intentionSubmitted
+                  )}
+                </text>
+              )}
             </g>
           </g>
         )}

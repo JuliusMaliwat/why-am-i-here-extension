@@ -399,6 +399,11 @@ svg {
   font-weight: 600;
 }
 
+.chart-tooltip .tooltip-detail {
+  fill: var(--text-2);
+  font-size: 0.7rem;
+}
+
 .chart-tooltip {
   backdrop-filter: blur(8px);
 }
