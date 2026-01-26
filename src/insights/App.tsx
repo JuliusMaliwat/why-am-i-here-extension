@@ -774,14 +774,14 @@ export function App(): JSX.Element {
                   className={viewMode === "breakdown" ? "active" : ""}
                   onClick={() => setViewMode("breakdown")}
                 >
-                  Volume
+                  Counts
                 </button>
                 <button
                   type="button"
                   className={viewMode === "rate" ? "active" : ""}
                   onClick={() => setViewMode("rate")}
                 >
-                  Signal
+                  Rate
                 </button>
               </div>
             </div>
