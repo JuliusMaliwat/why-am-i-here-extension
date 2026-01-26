@@ -195,6 +195,11 @@
   * Output: axis switches between % and counts
   * DoD: labels correct for active view
 
+* [x] **Insights v0: top intentions grouping (similar phrases)**
+
+  * Output: similar intentions grouped into a single entry
+  * DoD: representative is most frequent variant; counts aggregated
+
 * [ ] **Insights v1: active time tracking**
 
   * Output: active seconds per domain/session

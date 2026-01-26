@@ -140,7 +140,7 @@ export function App(): JSX.Element {
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [range, setRange] = useState<RangeOption>("30d");
   const metric: MetricOption = "no_intention_rate";
-  const [viewMode, setViewMode] = useState<ViewMode>("rate");
+  const [viewMode, setViewMode] = useState<ViewMode>("breakdown");
   const [domainMenuOpen, setDomainMenuOpen] = useState(false);
   const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -771,17 +771,17 @@ export function App(): JSX.Element {
               <div className="view-toggle">
                 <button
                   type="button"
+                  className={viewMode === "breakdown" ? "active" : ""}
+                  onClick={() => setViewMode("breakdown")}
+                >
+                  Counts
+                </button>
+                <button
+                  type="button"
                   className={viewMode === "rate" ? "active" : ""}
                   onClick={() => setViewMode("rate")}
                 >
                   Rate
-                </button>
-                <button
-                  type="button"
-                  className={viewMode === "breakdown" ? "active" : ""}
-                  onClick={() => setViewMode("breakdown")}
-                >
-                  Breakdown
                 </button>
               </div>
             </div>
@@ -919,19 +919,44 @@ export function App(): JSX.Element {
                           </p>
                         ) : (
                           <ol className="intentions-list">
-                            {items.map((item) => (
-                              <li
-                                key={`${domain}-${item.text}`}
-                                className="intentions-item"
-                              >
-                                <span className="intentions-text">
-                                  {item.text}
-                                </span>
-                                <span className="intentions-count">
-                                  {item.count}
-                                </span>
-                              </li>
-                            ))}
+                            {items.map((item) => {
+                              const variants =
+                                item.variants?.filter(
+                                  (variant) => variant.text !== item.text
+                                ) ?? [];
+                              return (
+                                <li
+                                  key={`${domain}-${item.text}`}
+                                  className="intentions-item"
+                                >
+                                  <div className="intentions-main">
+                                    <span className="intentions-text">
+                                      {item.text}
+                                    </span>
+                                    <span className="intentions-count">
+                                      {item.count}
+                                    </span>
+                                  </div>
+                                  {variants.length > 0 && (
+                                    <details className="intentions-variants">
+                                      <summary className="intentions-variants-toggle">
+                                        View variants ({variants.length})
+                                      </summary>
+                                      <div className="intentions-variant-list">
+                                        {variants.map((variant) => (
+                                          <span
+                                            key={`${domain}-${item.text}-${variant.text}`}
+                                            className="intentions-variant"
+                                          >
+                                            {variant.text} · {variant.count}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </details>
+                                  )}
+                                </li>
+                              );
+                            })}
                           </ol>
                         )}
                       </div>
