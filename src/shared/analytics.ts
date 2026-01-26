@@ -23,14 +23,21 @@ export type TopIntention = {
 
 type DomainDailyMap = Record<string, Record<string, DailyDomainCounts>>;
 type DomainHourlyMap = Record<string, Record<string, HourlyDomainCounts>>;
-type DomainIntentionMap = Record<string, Map<string, number>>;
+type IntentionStats = {
+  count: number;
+  lastSeen: number;
+};
+
+type DomainIntentionMap = Record<string, Map<string, IntentionStats>>;
 
 type IntentionCluster = {
   representative: string;
   repCount: number;
+  repLastSeen: number;
   repTokens: string[];
   total: number;
-  variants: Map<string, number>;
+  lastSeen: number;
+  variants: Map<string, IntentionStats>;
 };
 
 const STOPWORDS = new Set([
@@ -212,10 +219,43 @@ function lemmatizeToken(token: string): string {
     lemmatizer.adjective(base),
     base
   ].filter(Boolean);
-  return candidates.reduce((best, current) => {
+  const lemma = candidates.reduce((best, current) => {
     if (!best) return current;
     return current.length < best.length ? current : best;
   }, base);
+  return applyItalianStem(lemma);
+}
+
+function applyItalianStem(token: string): string {
+  if (token.length < 4) {
+    return token;
+  }
+  const lower = token.toLowerCase();
+  const endings = [
+    "ando",
+    "endo",
+    "are",
+    "ere",
+    "ire",
+    "ato",
+    "uto",
+    "ito",
+    "ava",
+    "avo",
+    "avi",
+    "iamo",
+    "ate",
+    "ano"
+  ];
+  for (const ending of endings) {
+    if (lower.endsWith(ending) && lower.length - ending.length >= 3) {
+      return lower.slice(0, -ending.length);
+    }
+  }
+  if (lower.length >= 5 && /[aeiou]$/.test(lower)) {
+    return lower.slice(0, -1);
+  }
+  return lower;
 }
 
 function similarityScore(tokensA: string[], tokensB: string[]): number {
@@ -249,11 +289,16 @@ function similarityScore(tokensA: string[], tokensB: string[]): number {
 function isBetterRepresentative(
   candidate: string,
   candidateCount: number,
+  candidateLastSeen: number,
   current: string,
-  currentCount: number
+  currentCount: number,
+  currentLastSeen: number
 ): boolean {
   if (candidate.length !== current.length) {
     return candidate.length > current.length;
+  }
+  if (candidateLastSeen !== currentLastSeen) {
+    return candidateLastSeen > currentLastSeen;
   }
   if (candidateCount !== currentCount) {
     return candidateCount > currentCount;
@@ -262,18 +307,23 @@ function isBetterRepresentative(
 }
 
 function groupIntentions(
-  intentionMap: Map<string, number>,
+  intentionMap: Map<string, IntentionStats>,
   limit: number
 ): TopIntention[] {
   const items = Array.from(intentionMap.entries()).sort((a, b) => {
-    if (b[1] !== a[1]) {
-      return b[1] - a[1];
+    if (b[1].count !== a[1].count) {
+      return b[1].count - a[1].count;
+    }
+    if (b[1].lastSeen !== a[1].lastSeen) {
+      return b[1].lastSeen - a[1].lastSeen;
     }
     return a[0].localeCompare(b[0]);
   });
 
   const clusters: IntentionCluster[] = [];
-  items.forEach(([text, count]) => {
+  items.forEach(([text, stats]) => {
+    const count = stats.count;
+    const lastSeen = stats.lastSeen;
     const tokens = normalizeForSimilarity(text);
     let bestIndex = -1;
     let bestScore = 0;
@@ -288,27 +338,36 @@ function groupIntentions(
     if (bestScore >= 0.4 && bestIndex >= 0) {
       const cluster = clusters[bestIndex];
       cluster.total += count;
-      const prevCount = cluster.variants.get(text) ?? 0;
-      cluster.variants.set(text, prevCount + count);
+      cluster.lastSeen = Math.max(cluster.lastSeen, lastSeen);
+      const prevStats = cluster.variants.get(text);
+      cluster.variants.set(text, {
+        count: (prevStats?.count ?? 0) + count,
+        lastSeen: Math.max(prevStats?.lastSeen ?? 0, lastSeen)
+      });
       if (
         isBetterRepresentative(
           text,
           count,
+          lastSeen,
           cluster.representative,
-          cluster.repCount
+          cluster.repCount,
+          cluster.repLastSeen
         )
       ) {
         cluster.representative = text;
         cluster.repCount = count;
+        cluster.repLastSeen = lastSeen;
         cluster.repTokens = tokens;
       }
     } else {
       clusters.push({
         representative: text,
         repCount: count,
+        repLastSeen: lastSeen,
         repTokens: tokens,
         total: count,
-        variants: new Map([[text, count]])
+        lastSeen: lastSeen,
+        variants: new Map([[text, { count, lastSeen }]])
       });
     }
   });
@@ -318,22 +377,32 @@ function groupIntentions(
       if (b.total !== a.total) {
         return b.total - a.total;
       }
+      if (b.lastSeen !== a.lastSeen) {
+        return b.lastSeen - a.lastSeen;
+      }
       return a.representative.localeCompare(b.representative);
     })
     .slice(0, limit)
     .map((cluster) => {
       const variants = Array.from(cluster.variants.entries())
-        .map(([text, count]) => ({ text, count }))
+        .map(([text, variantStats]) => ({
+          text,
+          count: variantStats.count,
+          lastSeen: variantStats.lastSeen
+        }))
         .sort((a, b) => {
           if (b.count !== a.count) {
             return b.count - a.count;
+          }
+          if (b.lastSeen !== a.lastSeen) {
+            return b.lastSeen - a.lastSeen;
           }
           return a.text.localeCompare(b.text);
         });
       return {
         text: cluster.representative,
         count: cluster.total,
-        variants
+        variants: variants.map(({ text, count }) => ({ text, count }))
       };
     });
 }
@@ -483,8 +552,18 @@ export function aggregateTopIntentionsByDomain(
     if (!map[event.domain]) {
       map[event.domain] = new Map();
     }
-    const count = map[event.domain].get(normalized) ?? 0;
-    map[event.domain].set(normalized, count + 1);
+    const current = map[event.domain].get(normalized);
+    if (current) {
+      map[event.domain].set(normalized, {
+        count: current.count + 1,
+        lastSeen: Math.max(current.lastSeen, event.timestamp)
+      });
+    } else {
+      map[event.domain].set(normalized, {
+        count: 1,
+        lastSeen: event.timestamp
+      });
+    }
   });
 
   const result: Record<string, TopIntention[]> = {};
