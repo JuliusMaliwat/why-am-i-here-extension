@@ -140,7 +140,7 @@ export function App(): JSX.Element {
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [range, setRange] = useState<RangeOption>("30d");
   const metric: MetricOption = "no_intention_rate";
-  const [viewMode, setViewMode] = useState<ViewMode>("rate");
+  const [viewMode, setViewMode] = useState<ViewMode>("breakdown");
   const [domainMenuOpen, setDomainMenuOpen] = useState(false);
   const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -771,17 +771,17 @@ export function App(): JSX.Element {
               <div className="view-toggle">
                 <button
                   type="button"
-                  className={viewMode === "rate" ? "active" : ""}
-                  onClick={() => setViewMode("rate")}
-                >
-                  Rate
-                </button>
-                <button
-                  type="button"
                   className={viewMode === "breakdown" ? "active" : ""}
                   onClick={() => setViewMode("breakdown")}
                 >
-                  Breakdown
+                  Volume
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === "rate" ? "active" : ""}
+                  onClick={() => setViewMode("rate")}
+                >
+                  Signal
                 </button>
               </div>
             </div>
