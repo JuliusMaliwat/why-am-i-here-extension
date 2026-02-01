@@ -133,7 +133,8 @@ function lockScroll(): void {
 
   document.addEventListener("wheel", preventScroll, { passive: false });
   document.addEventListener("touchmove", preventScroll, { passive: false });
-  document.addEventListener("keydown", preventKeyScroll, true);
+  window.addEventListener("keydown", handleOverlayKeyEvent, true);
+  window.addEventListener("keyup", handleOverlayKeyEvent, true);
 }
 
 function unlockScroll(): void {
@@ -156,7 +157,8 @@ function unlockScroll(): void {
 
   document.removeEventListener("wheel", preventScroll);
   document.removeEventListener("touchmove", preventScroll);
-  document.removeEventListener("keydown", preventKeyScroll, true);
+  window.removeEventListener("keydown", handleOverlayKeyEvent, true);
+  window.removeEventListener("keyup", handleOverlayKeyEvent, true);
 
   window.scrollTo(0, scrollTop);
   document.documentElement.removeAttribute(SCROLL_TOP_ATTR);
@@ -166,30 +168,41 @@ function preventScroll(event: Event): void {
   event.preventDefault();
 }
 
-function preventKeyScroll(event: KeyboardEvent): void {
-  if (activeOverlayInput) {
-    const path = event.composedPath();
-    if (path.includes(activeOverlayInput)) {
-      return;
-    }
-    const root = activeOverlayInput.getRootNode();
-    if ("activeElement" in root && root.activeElement === activeOverlayInput) {
-      return;
+function isOverlayEditableEvent(event: KeyboardEvent): boolean {
+  const path = event.composedPath?.() ?? [];
+  let inOverlay = false;
+
+  for (const node of path) {
+    if (node instanceof HTMLElement && node.id === OVERLAY_ID) {
+      inOverlay = true;
+      break;
     }
   }
 
-  const keys = [
-    "ArrowUp",
-    "ArrowDown",
-    "PageUp",
-    "PageDown",
-    "Home",
-    "End",
-    " "
-  ];
-  if (keys.includes(event.key)) {
-    event.preventDefault();
+  if (!inOverlay) return false;
+
+  for (const node of path) {
+    if (!(node instanceof HTMLElement)) continue;
+    if (
+      node.tagName === "INPUT" ||
+      node.tagName === "TEXTAREA" ||
+      node.isContentEditable
+    ) {
+      return true;
+    }
   }
+
+  return false;
+}
+
+function handleOverlayKeyEvent(event: KeyboardEvent): void {
+  if (isOverlayEditableEvent(event)) {
+    event.stopPropagation();
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 function applyPillPosition(pill: HTMLDivElement, position: PillPosition): void {
