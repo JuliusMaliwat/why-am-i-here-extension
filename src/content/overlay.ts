@@ -41,6 +41,11 @@ function setActiveIntention(intention: ActiveIntention): void {
   sessionStorage.setItem(ACTIVE_INTENTION_KEY, JSON.stringify(intention));
 }
 
+function focusOverlayInput(): void {
+  if (!activeOverlayInput) return;
+  activeOverlayInput.focus({ preventScroll: true });
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -135,6 +140,7 @@ function lockScroll(): void {
   document.addEventListener("touchmove", preventScroll, { passive: false });
   window.addEventListener("keydown", handleOverlayKeyEvent, true);
   window.addEventListener("keyup", handleOverlayKeyEvent, true);
+  window.addEventListener("focusin", keepOverlayFocus, true);
 }
 
 function unlockScroll(): void {
@@ -159,6 +165,7 @@ function unlockScroll(): void {
   document.removeEventListener("touchmove", preventScroll);
   window.removeEventListener("keydown", handleOverlayKeyEvent, true);
   window.removeEventListener("keyup", handleOverlayKeyEvent, true);
+  window.removeEventListener("focusin", keepOverlayFocus, true);
 
   window.scrollTo(0, scrollTop);
   document.documentElement.removeAttribute(SCROLL_TOP_ATTR);
@@ -203,6 +210,17 @@ function handleOverlayKeyEvent(event: KeyboardEvent): void {
 
   event.preventDefault();
   event.stopPropagation();
+}
+
+function keepOverlayFocus(event: FocusEvent): void {
+  if (!activeOverlayInput) return;
+  const path = event.composedPath?.() ?? [];
+  for (const node of path) {
+    if (node instanceof HTMLElement && node.id === OVERLAY_ID) {
+      return;
+    }
+  }
+  focusOverlayInput();
 }
 
 function applyPillPosition(pill: HTMLDivElement, position: PillPosition): void {
@@ -648,7 +666,9 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     pill.classList.add("is-gate");
     input.readOnly = false;
     input.value = latestIntentionText;
-    input.focus();
+    activeOverlayInput = input;
+    focusOverlayInput();
+    window.requestAnimationFrame(focusOverlayInput);
     timerText.textContent = "";
     timerText.style.display = "none";
     updateTypingState();
@@ -747,7 +767,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     preset.addEventListener("click", () => {
       const value = Number(preset.dataset.value || 0);
       setSelectedMinutes(value, "preset");
-      input.focus();
+      focusOverlayInput();
     });
   });
 
@@ -775,7 +795,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   customInput.addEventListener("keydown", (event) => {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    input.focus();
+    focusOverlayInput();
     form.requestSubmit();
   });
 
@@ -805,9 +825,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     }
     updateTypingState();
     activeOverlayInput = input;
-    setTimeout(() => {
-      input.focus();
-    }, 0);
+    focusOverlayInput();
+    window.requestAnimationFrame(focusOverlayInput);
 
     const attemptSubmit = (allowNoTimer: boolean): void => {
       error.textContent = "";
@@ -819,7 +838,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         error.textContent = "Add a short intention to continue.";
         error.style.display = "block";
         pill.classList.add("is-error");
-        input.focus();
+        focusOverlayInput();
         updateTypingState();
         return;
       }
@@ -827,7 +846,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         error.textContent = `Add at least ${MIN_INTENTION_LENGTH} characters to continue.`;
         error.style.display = "block";
         pill.classList.add("is-error");
-        input.focus();
+        focusOverlayInput();
         updateTypingState();
         return;
       }
@@ -836,7 +855,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         error.textContent = "Add at least two words to continue.";
         error.style.display = "block";
         pill.classList.add("is-error");
-        input.focus();
+        focusOverlayInput();
         updateTypingState();
         return;
       }
@@ -844,7 +863,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         error.textContent = "Make the intention a bit clearer to continue.";
         error.style.display = "block";
         pill.classList.add("is-error");
-        input.focus();
+        focusOverlayInput();
         updateTypingState();
         return;
       }
@@ -924,7 +943,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       window.setTimeout(() => {
         timeboxRow.classList.remove("is-highlight");
       }, 1200);
-      input.focus();
+      focusOverlayInput();
     });
   } else {
     input.value = intentionText ?? "";
