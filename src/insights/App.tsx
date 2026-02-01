@@ -4,7 +4,7 @@ import {
   aggregateHourlyCountsByDomain,
   aggregateTopIntentionsByDomain
 } from "../shared/analytics";
-import { clearEvents, getEvents } from "../shared/storage";
+import { clearEvents, getConfig, getEvents } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 
 type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
@@ -150,6 +150,7 @@ export function App(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     let mounted = true;
@@ -171,6 +172,26 @@ export function App(): JSX.Element {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    getConfig()
+      .then((config) => {
+        if (!mounted) return;
+        setTheme(config.theme ?? "dark");
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setTheme("dark");
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   const dailyByDomain = useMemo(
     () => aggregateDailyCountsByDomain(events),

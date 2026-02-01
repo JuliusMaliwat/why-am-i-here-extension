@@ -27,6 +27,7 @@ export function App(): JSX.Element {
   const [edit, setEdit] = useState<EditState | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     let mounted = true;
@@ -34,6 +35,7 @@ export function App(): JSX.Element {
       .then((config) => {
         if (!mounted) return;
         setDomains(uniqueDomains(config.targetDomains || []));
+        setTheme(config.theme ?? "dark");
       })
       .catch(() => {
         if (!mounted) return;
@@ -49,11 +51,20 @@ export function App(): JSX.Element {
     };
   }, []);
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   async function persist(nextDomains: string[]): Promise<void> {
     const normalized = uniqueDomains(nextDomains);
     setDomains(normalized);
-    await setConfig({ targetDomains: normalized });
+    await setConfig({ targetDomains: normalized, theme });
+  }
+
+  async function toggleTheme(): Promise<void> {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    await setConfig({ targetDomains: domains, theme: nextTheme });
   }
 
   async function handleAdd(event: React.FormEvent): Promise<void> {
@@ -139,6 +150,9 @@ export function App(): JSX.Element {
           <a className="insights-link" href="/insights.html">
             <span className="insights-label">Insights</span>
           </a>
+          <button type="button" className="theme-toggle" onClick={toggleTheme}>
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </button>
         </div>
       </div>
 

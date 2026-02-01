@@ -2,12 +2,13 @@ import type { ActiveIntentionState, EventRecord } from "./types";
 
 export type Config = {
   targetDomains: string[];
+  theme: "dark" | "light";
 };
 
 const STORAGE_KEY = "config";
 const EVENTS_KEY = "events";
 const ACTIVE_INTENTIONS_KEY = "activeIntentions";
-const DEFAULT_CONFIG: Config = { targetDomains: [] };
+const DEFAULT_CONFIG: Config = { targetDomains: [], theme: "dark" };
 
 type StorageShape = {
   [STORAGE_KEY]?: Config;
@@ -23,7 +24,7 @@ export async function getConfig(): Promise<Config> {
   if (hasChromeStorage()) {
     const result = await chrome.storage.local.get(STORAGE_KEY);
     const stored = (result as StorageShape)[STORAGE_KEY];
-    return stored ?? DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG, ...(stored ?? {}) };
   }
 
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -32,7 +33,7 @@ export async function getConfig(): Promise<Config> {
   }
   try {
     const parsed = JSON.parse(raw) as Config;
-    return parsed ?? DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG, ...(parsed ?? {}) };
   } catch {
     return DEFAULT_CONFIG;
   }
