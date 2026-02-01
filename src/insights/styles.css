@@ -14,6 +14,13 @@
   --accent-strong: #e7c595;
   --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
   --radius: 18px;
+  --chart-bg: rgba(15, 17, 19, 0.6);
+  --chart-border: rgba(255, 255, 255, 0.05);
+  --menu-bg: rgba(20, 23, 26, 0.98);
+  --menu-border: rgba(255, 255, 255, 0.08);
+  --menu-hover: rgba(255, 255, 255, 0.06);
+  --toggle-bg: rgba(255, 255, 255, 0.05);
+  --toggle-border: rgba(255, 255, 255, 0.08);
   font-family: "Avenir Next", "Futura", "Gill Sans", "Trebuchet MS",
     "Segoe UI", sans-serif;
 }
@@ -31,6 +38,13 @@
   --text-1: #2f3338;
   --text-2: #6b7076;
   --shadow: 0 20px 40px rgba(12, 15, 20, 0.08);
+  --chart-bg: #ffffff;
+  --chart-border: rgba(0, 0, 0, 0.08);
+  --menu-bg: #ffffff;
+  --menu-border: rgba(0, 0, 0, 0.14);
+  --menu-hover: rgba(0, 0, 0, 0.05);
+  --toggle-bg: rgba(0, 0, 0, 0.04);
+  --toggle-border: rgba(0, 0, 0, 0.12);
 }
 
 * {
@@ -98,6 +112,17 @@ body {
   transform: translateY(-1px);
 }
 
+[data-theme="light"] .back-link {
+  color: #6b4a21;
+  background: rgba(210, 176, 131, 0.22);
+  border-color: rgba(210, 176, 131, 0.5);
+  box-shadow: 0 8px 20px rgba(20, 24, 30, 0.12);
+}
+
+[data-theme="light"] .back-link:hover {
+  background: rgba(210, 176, 131, 0.32);
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -125,6 +150,10 @@ h1 {
   padding: 28px;
   box-shadow: var(--shadow);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .panel {
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
 .panel-header {
@@ -183,8 +212,8 @@ h1 {
 }
 
 .dropdown-button {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
   color: var(--text-1);
   padding: 8px 14px;
   border-radius: 999px;
@@ -206,7 +235,7 @@ h1 {
 }
 
 .dropdown-button::after {
-  content: "▾";
+  content: "\25BE";
   color: var(--text-2);
   font-size: 0.8rem;
 }
@@ -218,12 +247,16 @@ h1 {
   min-width: 220px;
   max-height: 280px;
   overflow: auto;
-  background: rgba(20, 23, 26, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--menu-bg);
+  border: 1px solid var(--menu-border);
   border-radius: 12px;
   padding: 8px;
   box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
   z-index: 10;
+}
+
+[data-theme="light"] .dropdown-menu {
+  box-shadow: 0 16px 28px rgba(18, 22, 28, 0.16);
 }
 
 .dropdown-item {
@@ -245,12 +278,17 @@ h1 {
 }
 
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--menu-hover);
 }
 
 .dropdown-item.active {
   background: rgba(231, 197, 149, 0.15);
   color: var(--accent-strong);
+}
+
+[data-theme="light"] .dropdown-item.active {
+  background: rgba(210, 176, 131, 0.25);
+  color: #6b4a21;
 }
 
 .panel-header h2 {
@@ -276,13 +314,13 @@ h1 {
   gap: 6px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
 }
 
 .range-toggle button {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
   color: var(--text-1);
   padding: 6px 12px;
   border-radius: 999px;
@@ -299,13 +337,13 @@ h1 {
   gap: 6px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
 }
 
 .view-toggle button {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
   color: var(--text-1);
   padding: 6px 12px;
   border-radius: 999px;
@@ -315,6 +353,12 @@ h1 {
 .view-toggle button.active {
   background: rgba(231, 197, 149, 0.2);
   color: var(--accent-strong);
+}
+
+[data-theme="light"] .view-toggle button.active {
+  background: rgba(210, 176, 131, 0.24);
+  color: #6b4a21;
+  border-color: rgba(210, 176, 131, 0.5);
 }
 
 .status {
@@ -356,10 +400,14 @@ h1 {
 
 .chart-wrap {
   margin-top: 22px;
-  background: rgba(15, 17, 19, 0.6);
+  background: var(--chart-bg);
   border-radius: 16px;
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--chart-border);
+}
+
+[data-theme="light"] .chart-wrap {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
 }
 
 svg {
@@ -369,6 +417,10 @@ svg {
 
 .axis-grid line {
   stroke: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .axis-grid line {
+  stroke: rgba(0, 0, 0, 0.08);
 }
 
 .axis-labels text {
@@ -451,6 +503,10 @@ svg {
   stroke-dasharray: 4 6;
 }
 
+[data-theme="light"] .chart-focus line {
+  stroke: rgba(0, 0, 0, 0.12);
+}
+
 .chart-focus circle {
   fill: currentColor;
   stroke: rgba(15, 17, 19, 0.9);
@@ -460,6 +516,11 @@ svg {
 .chart-tooltip rect {
   fill: rgba(32, 36, 40, 0.75);
   stroke: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="light"] .chart-tooltip rect {
+  fill: rgba(255, 255, 255, 0.96);
+  stroke: rgba(0, 0, 0, 0.1);
 }
 
 .chart-tooltip text {
@@ -489,6 +550,10 @@ svg {
   font-size: 0.8rem;
 }
 
+[data-theme="light"] .legend {
+  color: var(--text-1);
+}
+
 .legend-item[data-tooltip] {
   position: relative;
   cursor: help;
@@ -510,6 +575,13 @@ svg {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
+}
+
+[data-theme="light"] .legend-item[data-tooltip]::after {
+  background: rgba(255, 255, 255, 0.96);
+  color: #1e1f23;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 24px rgba(18, 22, 28, 0.16);
 }
 
 .legend-item[data-tooltip]:hover::after {
@@ -575,6 +647,11 @@ svg {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   padding: 12px 14px;
+}
+
+[data-theme="light"] .intentions-card {
+  background: #f7f7f8;
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .intentions-domain {
@@ -643,14 +720,14 @@ svg {
 }
 
 .intentions-variants-toggle::after {
-  content: "▾";
+  content: "\25BE";
   margin-left: 6px;
   font-size: 0.65rem;
   color: var(--text-2);
 }
 
 .intentions-variants[open] .intentions-variants-toggle::after {
-  content: "▴";
+  content: "\25B4";
 }
 
 .intentions-variant-list {
@@ -730,6 +807,17 @@ button.ghost:hover {
   transform: translateY(-1px);
 }
 
+[data-theme="light"] button.ghost {
+  color: #2f3338;
+  border-color: rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="light"] button.danger {
+  background: rgba(185, 87, 87, 0.2);
+  color: #6d2222;
+  border-color: rgba(160, 60, 60, 0.55);
+}
+
 .theme-fab {
   position: fixed;
   right: 28px;
@@ -737,6 +825,7 @@ button.ghost:hover {
   width: 48px;
   height: 48px;
   border-radius: 999px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-1);

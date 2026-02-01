@@ -191,6 +191,7 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
   }, [theme]);
 
   const handleThemeToggle = async (): Promise<void> => {

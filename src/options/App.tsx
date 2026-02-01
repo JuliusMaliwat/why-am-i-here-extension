@@ -53,6 +53,7 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
   }, [theme]);
 
   async function persist(nextDomains: string[]): Promise<void> {

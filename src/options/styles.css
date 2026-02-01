@@ -109,6 +109,17 @@ body {
   transform: translateY(-1px);
 }
 
+[data-theme="light"] .insights-link {
+  color: #3b2a16;
+  background: rgba(214, 182, 136, 0.35);
+  border-color: rgba(190, 150, 92, 0.6);
+  box-shadow: 0 10px 24px rgba(24, 28, 34, 0.14);
+}
+
+[data-theme="light"] .insights-link:hover {
+  background: rgba(214, 182, 136, 0.45);
+}
+
 .insights-label {
   letter-spacing: 0.02em;
   line-height: 1;
@@ -209,6 +220,17 @@ button.danger {
   border: 1px solid rgba(185, 87, 87, 0.4);
 }
 
+[data-theme="light"] button.ghost {
+  color: #2f3338;
+  border-color: rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="light"] button.danger {
+  background: rgba(185, 87, 87, 0.2);
+  color: #6d2222;
+  border-color: rgba(160, 60, 60, 0.55);
+}
+
 .status {
   color: var(--accent-strong);
   margin: 8px 0 0;
@@ -271,6 +293,7 @@ button.danger {
   width: 48px;
   height: 48px;
   border-radius: 999px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-1);
