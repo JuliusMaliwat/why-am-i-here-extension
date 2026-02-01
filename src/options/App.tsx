@@ -64,7 +64,10 @@ export function App(): JSX.Element {
   async function toggleTheme(): Promise<void> {
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
-    await setConfig({ targetDomains: domains, theme: nextTheme });
+    const config = await getConfig();
+    const nextDomains = uniqueDomains(config.targetDomains || domains);
+    setDomains(nextDomains);
+    await setConfig({ targetDomains: nextDomains, theme: nextTheme });
   }
 
   async function handleAdd(event: React.FormEvent): Promise<void> {
@@ -150,9 +153,6 @@ export function App(): JSX.Element {
           <a className="insights-link" href="/insights.html">
             <span className="insights-label">Insights</span>
           </a>
-          <button type="button" className="theme-toggle" onClick={toggleTheme}>
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </button>
         </div>
       </div>
 
@@ -253,6 +253,24 @@ export function App(): JSX.Element {
           </p>
         </div>
       </section>
+      <button
+        type="button"
+        className="theme-fab"
+        onClick={toggleTheme}
+        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      >
+        {theme === "dark" ? (
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.3 14.5A8.6 8.6 0 1 1 9.5 3.7a7 7 0 0 0 10.8 10.8z" />
+          </svg>
+        )}
+      </button>
     </main>
   );
 }

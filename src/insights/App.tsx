@@ -4,7 +4,7 @@ import {
   aggregateHourlyCountsByDomain,
   aggregateTopIntentionsByDomain
 } from "../shared/analytics";
-import { clearEvents, getConfig, getEvents } from "../shared/storage";
+import { clearEvents, getConfig, getEvents, setConfig } from "../shared/storage";
 import type { EventRecord } from "../shared/types";
 
 type RangeOption = "24h" | "7d" | "30d" | "3m" | "6m" | "12m" | "all";
@@ -192,6 +192,17 @@ export function App(): JSX.Element {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  const handleThemeToggle = async (): Promise<void> => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    try {
+      const config = await getConfig();
+      await setConfig({ ...config, theme: nextTheme });
+    } catch {
+      // keep UI responsive even if persistence fails
+    }
+  };
 
   const dailyByDomain = useMemo(
     () => aggregateDailyCountsByDomain(events),
@@ -1030,6 +1041,24 @@ export function App(): JSX.Element {
           </>
         )}
       </section>
+      <button
+        type="button"
+        className="theme-fab"
+        onClick={handleThemeToggle}
+        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      >
+        {theme === "dark" ? (
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.3 14.5A8.6 8.6 0 1 1 9.5 3.7a7 7 0 0 0 10.8 10.8z" />
+          </svg>
+        )}
+      </button>
     </main>
   );
 }
