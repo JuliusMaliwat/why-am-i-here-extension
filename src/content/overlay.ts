@@ -10,6 +10,10 @@ const SCROLL_TOP_ATTR = "data-waih-scroll-top";
 const MIN_INTENTION_LENGTH = 6;
 const PILL_POSITION_KEY = "waih_pill_position";
 let activeOverlayInput: HTMLInputElement | null = null;
+const overlayEditableElements = new Set<HTMLElement>();
+let activeMathConfirm: (() => void) | null = null;
+let mathGateActive = false;
+let mathGateArmed = false;
 
 type ActiveIntention = {
   domain: string;
@@ -177,13 +181,37 @@ function preventScroll(event: Event): void {
 
 function isOverlayEditableEvent(event: KeyboardEvent): boolean {
   const path = event.composedPath?.() ?? [];
+  const target =
+    event.target instanceof HTMLElement ? event.target : null;
+  const overlayRoot = document.getElementById(OVERLAY_ID);
+  const shadowActive = overlayRoot?.shadowRoot?.activeElement;
+  if (
+    shadowActive instanceof HTMLElement &&
+    (overlayEditableElements.has(shadowActive) ||
+      shadowActive.dataset.waihEditable === "true")
+  ) {
+    return true;
+  }
   let inOverlay = false;
 
   for (const node of path) {
-    if (node instanceof HTMLElement && node.id === OVERLAY_ID) {
-      inOverlay = true;
-      break;
+    if (!(node instanceof HTMLElement)) continue;
+    if (
+      overlayEditableElements.has(node) ||
+      node.dataset.waihEditable === "true"
+    ) {
+      return true;
     }
+    if (node === overlayRoot) {
+      inOverlay = true;
+    }
+    if (overlayRoot?.shadowRoot?.contains(node)) {
+      inOverlay = true;
+    }
+  }
+
+  if (!inOverlay && target && overlayRoot?.shadowRoot?.contains(target)) {
+    inOverlay = true;
   }
 
   if (!inOverlay) return false;
@@ -203,8 +231,22 @@ function isOverlayEditableEvent(event: KeyboardEvent): boolean {
 }
 
 function handleOverlayKeyEvent(event: KeyboardEvent): void {
-  if (isOverlayEditableEvent(event)) {
+  if (
+    event.key === "Enter" &&
+    mathGateActive &&
+    mathGateArmed &&
+    activeMathConfirm &&
+    !isOverlayEditableEvent(event)
+  ) {
+    event.preventDefault();
     event.stopPropagation();
+    activeMathConfirm();
+    return;
+  }
+  if (isOverlayEditableEvent(event)) {
+    if (event.key !== "Enter") {
+      event.stopPropagation();
+    }
     return;
   }
 
@@ -364,6 +406,12 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       user-select: none;
       pointer-events: none;
     }
+    .pill.is-locked .intention-input {
+      pointer-events: none;
+      opacity: 0.7;
+      cursor: default;
+      caret-color: transparent;
+    }
     .pill.is-free {
       transform: none;
     }
@@ -403,6 +451,10 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       opacity: 1;
       pointer-events: auto;
     }
+    .pill.is-locked .intent-submit {
+      opacity: 0;
+      pointer-events: none;
+    }
     .timer-text {
       font-size: 0.7rem;
       color: rgba(23, 26, 29, 0.45);
@@ -419,40 +471,57 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       min-height: 1.1em;
       white-space: nowrap;
     }
-    .no-timer {
+    .math-gate {
       position: absolute;
-      top: calc(100% + 2.2rem);
+      top: calc(100% + 0.9rem);
       left: 50%;
       transform: translateX(-50%);
       display: none;
       align-items: center;
-      gap: 0.5rem;
-      padding: 4px 8px;
+      gap: 0.6rem;
+      padding: 8px 12px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.7);
-      color: rgba(23, 26, 29, 0.8);
+      background: rgba(255, 255, 255, 0.78);
+      color: rgba(23, 26, 29, 0.85);
       border: 1px solid rgba(0, 0, 0, 0.08);
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
       white-space: nowrap;
     }
-    .no-timer button {
+    .math-gate.is-visible {
+      display: inline-flex;
+    }
+    .math-gate .math-input {
+      min-width: 4.6ch;
       border: none;
-      background: transparent;
-      color: rgba(23, 26, 29, 0.8);
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.8rem;
+      text-align: center;
+      outline: none;
+      color: rgba(23, 26, 29, 0.9);
+      cursor: text;
+      user-select: text;
+      pointer-events: auto;
+    }
+    .math-gate,
+    .math-gate * {
+      pointer-events: auto;
+    }
+    .math-gate .math-ok {
+      border: none;
+      background: rgba(23, 26, 29, 0.08);
+      color: rgba(23, 26, 29, 0.85);
       font-size: 0.7rem;
       font-weight: 600;
       cursor: pointer;
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: 999px;
     }
-    .no-timer .confirm {
-      background: rgba(231, 197, 149, 0.35);
-      color: rgba(23, 26, 29, 0.95);
-    }
-    .no-timer .secondary {
-      background: rgba(23, 26, 29, 0.06);
-      color: rgba(23, 26, 29, 0.85);
+    .math-gate .math-error {
+      color: rgba(214, 108, 108, 0.9);
+      font-size: 0.7rem;
     }
     .timebox-row {
       position: absolute;
@@ -549,30 +618,40 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
   const form = document.createElement("form");
   const input = document.createElement("input");
+  input.className = "intention-input";
   input.type = "text";
   input.placeholder = "Why am I here?";
+  input.dataset.waihEditable = "true";
+  overlayEditableElements.add(input);
 
   const error = document.createElement("p");
   error.className = "error";
 
-  const noTimerPrompt = document.createElement("div");
-  noTimerPrompt.className = "no-timer";
-  const noTimerText = document.createElement("span");
-  noTimerText.textContent = "Continue without a timer?";
-  const noTimerContinue = document.createElement("button");
-  noTimerContinue.className = "confirm";
-  noTimerContinue.type = "button";
-  noTimerContinue.textContent = "Continue";
-  const noTimerSetTimer = document.createElement("button");
-  noTimerSetTimer.className = "secondary";
-  noTimerSetTimer.type = "button";
-  noTimerSetTimer.textContent = "Set timer";
-  noTimerPrompt.append(noTimerText, noTimerContinue, noTimerSetTimer);
+  const mathGate = document.createElement("div");
+  mathGate.className = "math-gate";
+  const mathQuestion = document.createElement("span");
+  const mathInput = document.createElement("input");
+  mathInput.className = "math-input";
+  mathInput.type = "text";
+  mathInput.inputMode = "numeric";
+  mathInput.setAttribute("pattern", "[0-9]*");
+  mathInput.setAttribute("aria-label", "Solve the challenge to continue");
+  mathInput.placeholder = "Answer";
+  mathInput.dataset.waihEditable = "true";
+  overlayEditableElements.add(mathInput);
+  const mathOk = document.createElement("button");
+  mathOk.className = "math-ok";
+  mathOk.type = "button";
+  mathOk.textContent = "OK";
+  const mathError = document.createElement("span");
+  mathError.className = "math-error";
+  mathGate.append(mathQuestion, mathInput, mathOk, mathError);
 
   const sizer = document.createElement("span");
   sizer.className = "sizer";
 
   const button = document.createElement("button");
+  button.className = "intent-submit";
   button.type = "submit";
   button.textContent = "Enter";
 
@@ -606,6 +685,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   customInput.setAttribute("pattern", "[0-9]*");
   customInput.setAttribute("aria-label", "Custom minutes");
   customInput.placeholder = "10";
+  customInput.dataset.waihEditable = "true";
+  overlayEditableElements.add(customInput);
 
   const customSuffix = document.createElement("span");
   customSuffix.className = "custom-suffix";
@@ -627,6 +708,11 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   };
 
   const updateTypingState = (): void => {
+    if (mathGateVisible) {
+      pill.classList.add("is-typing");
+      timeboxRow.classList.remove("is-visible");
+      return;
+    }
     if (input.value.trim().length > 0) {
       pill.classList.add("is-typing");
       timeboxRow.classList.add("is-visible");
@@ -660,11 +746,13 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     overlay.style.display = "";
     error.style.display = "none";
     error.textContent = "";
-    noTimerPrompt.style.display = "none";
+    hideMathGate();
     pill.classList.remove("is-error");
     pill.classList.remove("is-pill");
+    pill.classList.remove("is-locked");
     pill.classList.add("is-gate");
     input.readOnly = false;
+    input.removeAttribute("aria-readonly");
     input.value = latestIntentionText;
     activeOverlayInput = input;
     focusOverlayInput();
@@ -717,6 +805,57 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   };
 
   let selectedMinutes: number | null = null;
+  let mathGateVisible = false;
+  let currentMathAnswer = 0;
+
+  const generateMathChallenge = (): string => {
+    const a = Math.floor(Math.random() * 100) + 1;
+    const b = Math.floor(Math.random() * 100) + 1;
+    const useAddition = Math.random() < 0.5;
+    if (useAddition) {
+      currentMathAnswer = a + b;
+      return `Solve ${a} + ${b}`;
+    }
+    const max = Math.max(a, b);
+    const min = Math.min(a, b);
+    currentMathAnswer = max - min;
+    return `Solve ${max} - ${min}`;
+  };
+
+  const showMathGate = (): void => {
+    if (!mathGateVisible) {
+      mathQuestion.textContent = generateMathChallenge();
+    }
+    mathGateVisible = true;
+    mathGateActive = true;
+    mathGateArmed = false;
+    mathGate.classList.add("is-visible");
+    mathInput.value = "";
+    mathError.textContent = "";
+    activeOverlayInput = mathInput;
+    input.readOnly = true;
+    input.setAttribute("aria-readonly", "true");
+    pill.classList.add("is-locked");
+    timeboxRow.classList.remove("is-visible");
+    updateTypingState();
+    mathInput.focus();
+    window.requestAnimationFrame(() => mathInput.focus());
+    window.requestAnimationFrame(() => {
+      mathGateArmed = true;
+    });
+  };
+
+  const hideMathGate = (): void => {
+    mathGateVisible = false;
+    mathGateActive = false;
+    mathGateArmed = false;
+    mathGate.classList.remove("is-visible");
+    mathError.textContent = "";
+    activeOverlayInput = input;
+    input.readOnly = false;
+    input.removeAttribute("aria-readonly");
+    pill.classList.remove("is-locked");
+  };
 
   const syncMinutes = (): void => {
     if (selectedMinutes == null) {
@@ -814,8 +953,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         error.style.display = "none";
         pill.classList.remove("is-error");
       }
-      if (noTimerPrompt.style.display === "flex") {
-        noTimerPrompt.style.display = "none";
+      if (!current) {
+        hideMathGate();
       }
       updateTypingState();
       updateSizing();
@@ -828,66 +967,68 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     focusOverlayInput();
     window.requestAnimationFrame(focusOverlayInput);
 
-    const attemptSubmit = (allowNoTimer: boolean): void => {
+    const clearInlineError = (): void => {
       error.textContent = "";
       error.style.display = "none";
-      noTimerPrompt.style.display = "none";
+      pill.classList.remove("is-error");
+    };
+
+    const showInlineError = (message: string): void => {
+      error.textContent = message;
+      error.style.display = "block";
+      pill.classList.add("is-error");
+    };
+
+    const getValidatedIntention = (): string | null => {
+      clearInlineError();
 
       const intention = input.value.trim();
       if (!intention) {
-        error.textContent = "Add a short intention to continue.";
-        error.style.display = "block";
-        pill.classList.add("is-error");
+        showInlineError("Add a short intention to continue.");
         focusOverlayInput();
         updateTypingState();
-        return;
+        return null;
       }
       if (intention.length < MIN_INTENTION_LENGTH) {
-        error.textContent = `Add at least ${MIN_INTENTION_LENGTH} characters to continue.`;
-        error.style.display = "block";
-        pill.classList.add("is-error");
+        showInlineError(
+          `Add at least ${MIN_INTENTION_LENGTH} characters to continue.`
+        );
         focusOverlayInput();
         updateTypingState();
-        return;
+        return null;
       }
       const wordCount = intention.split(/\s+/).length;
       if (wordCount < 2) {
-        error.textContent = "Add at least two words to continue.";
-        error.style.display = "block";
-        pill.classList.add("is-error");
+        showInlineError("Add at least two words to continue.");
         focusOverlayInput();
         updateTypingState();
-        return;
+        return null;
       }
       if (isLowSignalIntention(intention)) {
-        error.textContent = "Make the intention a bit clearer to continue.";
-        error.style.display = "block";
-        pill.classList.add("is-error");
+        showInlineError("Make the intention a bit clearer to continue.");
         focusOverlayInput();
         updateTypingState();
-        return;
+        return null;
       }
 
+      return intention;
+    };
+
+    const finalizeSubmission = (intention: string, minutes: number): void => {
       const hostname = normalizeHostname(window.location.hostname);
       if (!hostname) {
-        error.textContent = "This page does not have a valid domain.";
+        showInlineError("This page does not have a valid domain.");
         return;
       }
 
       const timestamp = Date.now();
-      const minutes = Number(form.dataset.timerMinutes || 0);
-      if (minutes === 0 && !allowNoTimer) {
-        noTimerPrompt.style.display = "flex";
-        return;
-      }
-      const endsAt =
-        minutes > 0 ? timestamp + minutes * 60 * 1000 : undefined;
+      const endsAt = timestamp + minutes * 60 * 1000;
 
       const activeIntention = {
         domain: hostname,
         intention,
         createdAt: timestamp,
-        timerMinutes: minutes > 0 ? minutes : undefined,
+        timerMinutes: minutes,
         timerEndsAt: endsAt
       };
 
@@ -899,7 +1040,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
           domain: hostname,
           intention,
           timestamp,
-          timerMinutes: minutes > 0 ? minutes : undefined
+          timerMinutes: minutes
         }
       });
 
@@ -915,7 +1056,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
       updateSizing();
-      startCountdown(endsAt, minutes > 0 ? minutes : undefined);
+      startCountdown(endsAt, minutes);
 
       if (!hasDrag) {
         enableDragging(pill, position);
@@ -927,23 +1068,69 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       activeOverlayInput = null;
     };
 
+    const attemptSubmit = (): void => {
+      hideMathGate();
+
+      const intention = getValidatedIntention();
+      if (!intention) return;
+
+      const minutes = Number(form.dataset.timerMinutes || 0);
+      if (minutes === 0) {
+        showMathGate();
+        return;
+      }
+
+      finalizeSubmission(intention, minutes);
+    };
+
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      attemptSubmit(false);
+      attemptSubmit();
     });
 
-    noTimerContinue.addEventListener("click", () => {
-      attemptSubmit(true);
+    const handleMathConfirm = (): void => {
+      const intention = getValidatedIntention();
+      if (!intention) return;
+      if (!mathInput.value.trim()) {
+        mathError.textContent = "";
+        mathInput.focus();
+        return;
+      }
+      const answer = Number(mathInput.value.trim());
+      if (!Number.isFinite(answer) || answer !== currentMathAnswer) {
+        mathError.textContent = "Try again.";
+        mathInput.focus();
+        return;
+      }
+      hideMathGate();
+      input.readOnly = false;
+      input.removeAttribute("aria-readonly");
+      pill.classList.remove("is-locked");
+      form.dataset.timerMinutes = "1";
+      finalizeSubmission(intention, 1);
+    };
+
+    activeMathConfirm = handleMathConfirm;
+
+    mathInput.addEventListener("input", () => {
+      const digitsOnly = mathInput.value.replace(/\D/g, "");
+      if (mathInput.value !== digitsOnly) {
+        mathInput.value = digitsOnly;
+      }
+      mathError.textContent = "";
     });
 
-    noTimerSetTimer.addEventListener("click", () => {
-      noTimerPrompt.style.display = "none";
-      timeboxRow.classList.add("is-visible");
-      timeboxRow.classList.add("is-highlight");
-      window.setTimeout(() => {
-        timeboxRow.classList.remove("is-highlight");
-      }, 1200);
-      focusOverlayInput();
+    mathOk.addEventListener("click", handleMathConfirm);
+    mathInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      handleMathConfirm();
+    });
+
+    mathInput.addEventListener("keyup", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      handleMathConfirm();
     });
   } else {
     input.value = intentionText ?? "";
@@ -960,7 +1147,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
   if (mode === "gate") {
     form.append(input, button);
-    pill.append(form, timerText, error, noTimerPrompt, timeboxRow);
+    pill.append(form, timerText, error, mathGate, timeboxRow);
     shadow.append(style, sizer, overlay, pill);
   } else {
     form.append(input);
