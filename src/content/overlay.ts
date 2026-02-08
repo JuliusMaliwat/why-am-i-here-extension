@@ -7,7 +7,7 @@ const ACTIVE_INTENTION_KEY = "waih_active_intention";
 const SCROLL_LOCK_CLASS = "waih-scroll-lock";
 const SCROLL_LOCK_ATTR = "data-waih-scroll-lock";
 const SCROLL_TOP_ATTR = "data-waih-scroll-top";
-const MIN_INTENTION_LENGTH = 6;
+const MIN_INTENTION_LENGTH = 5;
 const PILL_POSITION_KEY = "waih_pill_position";
 let activeOverlayInput: HTMLInputElement | null = null;
 const overlayEditableElements = new Set<HTMLElement>();
@@ -52,52 +52,6 @@ function focusOverlayInput(): void {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-function isLowSignalIntention(value: string): boolean {
-  const trimmed = value.trim();
-  const compact = trimmed.replace(/\s+/g, "");
-  if (!compact) return false;
-
-  const letters = compact.match(/[a-z]/gi) ?? [];
-  const letterRatio = letters.length / compact.length;
-  if (letterRatio < 0.6) return true;
-
-  if (/(.)\1{3,}/.test(compact)) return true;
-  if (/(.{2,3})\1{1,}/i.test(compact)) return true;
-
-  const uniqueChars = new Set(compact.toLowerCase()).size;
-  if (compact.length >= 8 && uniqueChars / compact.length < 0.4) {
-    return true;
-  }
-
-  if (letters.length >= 8 && !trimmed.includes(" ")) {
-    const vowels = compact.match(/[aeiouy]/gi) ?? [];
-    const vowelRatio = vowels.length / letters.length;
-    if (vowelRatio < 0.25) return true;
-
-    const longConsonantStreak =
-      /[^aeiouy\W]{5,}/i.test(compact) ||
-      /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(compact);
-    if (longConsonantStreak) return true;
-  }
-
-  if (!trimmed.includes(" ") && letters.length >= 9) {
-    return true;
-  }
-
-  if (!trimmed.includes(" ") && letters.length >= 6) {
-    const vowels = compact.match(/[aeiouy]/gi) ?? [];
-    const vowelRatio = vowels.length / letters.length;
-    if (vowelRatio < 0.3) return true;
-
-    const consonantStreak =
-      /[^aeiouy\W]{4,}/i.test(compact) ||
-      /[bcdfghjklmnpqrstvwxyz]{4,}/i.test(compact);
-    if (consonantStreak) return true;
-  }
-
-  return false;
 }
 
 function getDefaultPillPosition(): PillPosition {
@@ -946,8 +900,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       if (
         error.textContent &&
         current.length >= MIN_INTENTION_LENGTH &&
-        wordCount >= 2 &&
-        !isLowSignalIntention(current)
+        wordCount >= 2
       ) {
         error.textContent = "";
         error.style.display = "none";
@@ -1000,12 +953,6 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       const wordCount = intention.split(/\s+/).length;
       if (wordCount < 2) {
         showInlineError("Add at least two words to continue.");
-        focusOverlayInput();
-        updateTypingState();
-        return null;
-      }
-      if (isLowSignalIntention(intention)) {
-        showInlineError("Make the intention a bit clearer to continue.");
         focusOverlayInput();
         updateTypingState();
         return null;
