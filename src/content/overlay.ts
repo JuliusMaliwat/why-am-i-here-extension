@@ -347,6 +347,9 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       cursor: text;
       user-select: none;
     }
+    .pill.is-gate {
+      max-width: 420px;
+    }
     .pill.is-error {
       border-color: rgba(231, 197, 149, 0.7);
       box-shadow: 0 0 0 3px rgba(231, 197, 149, 0.15),
@@ -354,11 +357,16 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     }
     .pill.is-pill {
       cursor: grab;
+      max-width: min(760px, calc(100vw - 32px));
+      width: min(760px, calc(100vw - 32px));
     }
     .pill.is-pill input {
       cursor: grab;
       user-select: none;
       pointer-events: none;
+    }
+    .pill.is-pill .intent-submit {
+      display: none;
     }
     .pill.is-locked .intention-input {
       pointer-events: none;
@@ -377,7 +385,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       min-width: 0;
       width: 100%;
     }
-    input {
+    .intention-input {
       flex: 1;
       min-width: 0;
       background: transparent;
@@ -388,7 +396,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       outline: none;
       width: 100%;
     }
-    input::placeholder {
+    .intention-input::placeholder {
       color: rgba(23, 26, 29, 0.42);
     }
     button {
@@ -421,6 +429,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       font-size: 0.7rem;
       color: rgba(23, 26, 29, 0.45);
       white-space: nowrap;
+      flex: 0 0 auto;
     }
     .error {
       position: absolute;
@@ -453,12 +462,20 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     .math-gate.is-visible {
       display: inline-flex;
     }
+    .math-gate .math-question {
+      flex: 0 1 auto;
+      white-space: nowrap;
+    }
     .math-gate .math-input {
-      min-width: 4.6ch;
+      flex: 0 0 auto;
+      box-sizing: content-box;
+      width: 8.5ch;
+      min-width: 8.5ch;
+      max-width: 10.5ch;
       border: none;
       background: rgba(255, 255, 255, 0.85);
       border-radius: 999px;
-      padding: 3px 10px;
+      padding: 3px 8px;
       font-size: 0.8rem;
       text-align: center;
       outline: none;
@@ -467,11 +484,15 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       user-select: text;
       pointer-events: auto;
     }
+    .math-gate .math-input::placeholder {
+      color: rgba(23, 26, 29, 0.4);
+    }
     .math-gate,
     .math-gate * {
       pointer-events: auto;
     }
     .math-gate .math-ok {
+      flex: 0 0 auto;
       border: none;
       background: rgba(23, 26, 29, 0.08);
       color: rgba(23, 26, 29, 0.85);
@@ -592,6 +613,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   const mathGate = document.createElement("div");
   mathGate.className = "math-gate";
   const mathQuestion = document.createElement("span");
+  mathQuestion.className = "math-question";
   const mathInput = document.createElement("input");
   mathInput.className = "math-input";
   mathInput.type = "text";
@@ -665,7 +687,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     const value = input.value.trim() || input.placeholder;
     sizer.textContent = value;
     const width = sizer.getBoundingClientRect().width;
-    const padded = clamp(width + 40, 180, 320);
+    const maxWidth = pill.classList.contains("is-pill") ? 620 : 320;
+    const padded = clamp(width + 40, 180, maxWidth);
     input.style.width = `${padded}px`;
   };
 
@@ -713,6 +736,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     pill.classList.remove("is-pill");
     pill.classList.remove("is-locked");
     pill.classList.add("is-gate");
+    button.style.display = "";
     input.readOnly = false;
     input.removeAttribute("aria-readonly");
     input.value = latestIntentionText;
@@ -1010,6 +1034,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       pill.classList.remove("is-typing");
       pill.classList.remove("is-gate");
       pill.classList.add("is-pill");
+      button.style.display = "none";
       updateSizing();
       startCountdown(endsAt, minutes);
 
