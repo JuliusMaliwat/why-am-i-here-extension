@@ -374,15 +374,19 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       flex: 1;
       align-items: center;
       gap: 10px;
+      min-width: 0;
+      width: 100%;
     }
     input {
       flex: 1;
+      min-width: 0;
       background: transparent;
       border: none;
       color: inherit;
       font-size: 1.05rem;
       font-weight: 500;
       outline: none;
+      width: 100%;
     }
     input::placeholder {
       color: rgba(23, 26, 29, 0.42);
@@ -400,6 +404,10 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.15s ease;
+    }
+    .intent-submit {
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
     .pill.is-typing button {
       opacity: 1;
@@ -657,7 +665,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     const value = input.value.trim() || input.placeholder;
     sizer.textContent = value;
     const width = sizer.getBoundingClientRect().width;
-    const padded = clamp(width + 40, 180, 380);
+    const padded = clamp(width + 40, 180, 320);
     input.style.width = `${padded}px`;
   };
 
