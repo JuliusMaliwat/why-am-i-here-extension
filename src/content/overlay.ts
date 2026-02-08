@@ -357,8 +357,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     }
     .pill.is-pill {
       cursor: grab;
-      max-width: min(760px, calc(100vw - 32px));
-      width: min(760px, calc(100vw - 32px));
+      max-width: min(640px, calc(100vw - 32px));
+      width: auto;
     }
     .pill.is-pill input {
       cursor: grab;
@@ -686,10 +686,22 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   const updateSizing = (): void => {
     const value = input.value.trim() || input.placeholder;
     sizer.textContent = value;
-    const width = sizer.getBoundingClientRect().width;
-    const maxWidth = pill.classList.contains("is-pill") ? 620 : 320;
-    const padded = clamp(width + 40, 180, maxWidth);
-    input.style.width = `${padded}px`;
+    const textWidth = sizer.getBoundingClientRect().width;
+    const isPillMode = pill.classList.contains("is-pill");
+    const maxPillWidth = Math.min(window.innerWidth - 32, isPillMode ? 640 : 420);
+    const timerWidth =
+      timerText.style.display === "none"
+        ? 0
+        : timerText.getBoundingClientRect().width + 10;
+    const submitWidth = button.style.display === "none" ? 0 : 58;
+    const horizontalPadding = 40;
+    const gapAllowance = 12;
+    const reservedWidth =
+      horizontalPadding + gapAllowance + timerWidth + submitWidth;
+    const inputMax = Math.max(180, maxPillWidth - reservedWidth);
+    const inputMin = isPillMode ? 200 : 180;
+    const adaptiveWidth = clamp(textWidth + 20, inputMin, inputMax);
+    input.style.width = `${adaptiveWidth}px`;
   };
 
   const updateTypingState = (): void => {
@@ -746,6 +758,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     timerText.textContent = "";
     timerText.style.display = "none";
     updateTypingState();
+    updateSizing();
     lockScroll();
     if (latestIntentionText) {
       void sendMessage({
@@ -777,10 +790,12 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       const mins = Math.floor(remainingSec / 60);
       const secs = remainingSec % 60;
       timerText.textContent = `${mins}m ${secs}s`;
+      updateSizing();
       if (remainingMs <= 0) {
         stopCountdown();
         timerText.textContent = "";
         timerText.style.display = "none";
+        updateSizing();
         showGate(minutes);
       }
     };
