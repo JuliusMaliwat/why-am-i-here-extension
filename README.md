@@ -1,20 +1,23 @@
-﻿# why am i here
+# why am i here
 
-A gentle browser extension that turns autopilot browsing into intentional time.
+A browser extension that adds a short pause before distraction sites, then keeps your intention visible while you browse.
 
 ## What it does
-When you open a site you chose (e.g. youtube.com, reddit.com), the page pauses and asks one simple question:
+When you open a domain in your target list (for example `youtube.com` or `reddit.com`), the page is paused and asks:
 "Why am I here?"
-You write a short intention to continue, and a small pill stays visible as a reminder while you browse.
-Insights summarizes what happens on those domains over time (no-intention rate, counts, and common intentions).
+You submit an intention, start a timer, and continue with a small floating reminder pill.
+Insights shows whether visits were intentional over time, plus common intentions by domain.
 
 ## How it works
-1. Add the domains you want to be more mindful about.
-2. The overlay appears on those domains.
-3. You enter an intention to proceed.
-4. A floating pill keeps your intention visible.
-5. Optional timebox: pick 5/10/20/custom minutes. When it ends, the prompt returns.
-6. Review Insights to spot patterns and tune your domain list.
+1. Add the domains you want to guard.
+2. On those domains, the overlay blocks background interaction.
+3. Write an intention and submit.
+4. Pick a timebox (`5m`, `10m`, `20m`, or custom minutes).
+5. If you try to continue without selecting a timer, a quick math check appears and starts a default 1 minute timer after a correct answer.
+6. Keep browsing with a visible intention pill and countdown.
+7. When the timer expires, the prompt returns so you can recommit.
+8. Review Insights to see trend, no-intention rate, and top intentions.
 
 ## Privacy
-All data stays local in your browser (including Insights). No cloud, no tracking, no ads.
+Everything is stored locally in your browser.
+No cloud sync, no tracking, no ads.
