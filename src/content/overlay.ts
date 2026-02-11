@@ -799,6 +799,26 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         timerText.textContent = "";
         timerText.style.display = "none";
         updateSizing();
+        if (mode === "pill") {
+          const domain = normalizeHostname(window.location.hostname) || "";
+          if (latestIntentionText) {
+            void sendMessage({
+              type: "timer_expired",
+              payload: {
+                domain,
+                timestamp: Date.now(),
+                minutes
+              }
+            });
+          }
+          const gateRoot = createOverlay({
+            mode: "gate",
+            intentionText: latestIntentionText
+          });
+          root.replaceWith(gateRoot);
+          lockScroll();
+          return;
+        }
         showGate(minutes);
       }
     };
@@ -1148,9 +1168,10 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     pill.append(form, timerText, error, mathGate, timeboxRow);
     shadow.append(style, sizer, overlay, pill);
   } else {
+    overlay.style.display = "none";
     form.append(input);
     pill.append(form, timerText);
-    shadow.append(style, sizer, pill);
+    shadow.append(style, sizer, overlay, pill);
   }
 
   applyPillPosition(pill, position);
