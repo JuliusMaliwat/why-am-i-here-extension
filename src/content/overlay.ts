@@ -278,6 +278,9 @@ function enableDragging(pill: HTMLDivElement, position: PillPosition): void {
   };
 
   pill.addEventListener("pointerdown", (event) => {
+    if (!pill.classList.contains("is-pill")) {
+      return;
+    }
     event.preventDefault();
     const rect = pill.getBoundingClientRect();
     startX = event.clientX;
