@@ -301,10 +301,11 @@ type OverlayInit = {
   intentionText?: string;
   timerEndsAt?: number;
   timerMinutes?: number;
+  isRePrompt?: boolean;
 };
 
 function createOverlay(init: OverlayInit): HTMLDivElement {
-  const { mode, intentionText, timerEndsAt } = init;
+  const { mode, intentionText, timerEndsAt, isRePrompt } = init;
   const root = document.createElement("div");
   root.id = OVERLAY_ID;
   const shadow = root.attachShadow({ mode: "open" });
@@ -606,7 +607,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   const input = document.createElement("input");
   input.className = "intention-input";
   input.type = "text";
-  input.placeholder = "Why am I here?";
+  input.placeholder = isRePrompt ? "Set a new intention" : "Why am I here?";
   input.dataset.waihEditable = "true";
   overlayEditableElements.add(input);
 
@@ -757,7 +758,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     button.style.display = "";
     input.readOnly = false;
     input.removeAttribute("aria-readonly");
-    input.value = latestIntentionText;
+    input.value = "";
+    input.placeholder = "Set a new intention";
     activeOverlayInput = input;
     focusOverlayInput();
     window.requestAnimationFrame(focusOverlayInput);
@@ -829,7 +831,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
           }
           const gateRoot = createOverlay({
             mode: "gate",
-            intentionText: latestIntentionText
+            isRePrompt: true
           });
           root.replaceWith(gateRoot);
           lockScroll();
@@ -1237,7 +1239,7 @@ export async function mountOverlay(): Promise<void> {
       document.documentElement.appendChild(
         createOverlay({
           mode: "gate",
-          intentionText: existingIntention.intention
+          isRePrompt: true
         })
       );
       return;
