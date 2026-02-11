@@ -739,6 +739,9 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   };
 
   const showGate = (minutes?: number): void => {
+    const timestamp = Date.now();
+    const domain = normalizeHostname(window.location.hostname) || "";
+
     position.mode = "center";
     position.x = window.innerWidth / 2;
     applyPillPosition(pill, position);
@@ -763,14 +766,20 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     updateTypingState();
     updateSizing();
     lockScroll();
-    if (latestIntentionText) {
+    if (latestIntentionText && domain) {
       void sendMessage({
         type: "timer_expired",
         payload: {
-          domain: normalizeHostname(window.location.hostname) || "",
-          timestamp: Date.now(),
+          domain,
+          timestamp,
           minutes
         }
+      });
+    }
+    if (domain) {
+      void sendMessage({
+        type: "overlay_shown",
+        payload: { domain, timestamp }
       });
     }
   };
@@ -801,14 +810,21 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         updateSizing();
         if (mode === "pill") {
           const domain = normalizeHostname(window.location.hostname) || "";
-          if (latestIntentionText) {
+          const timestamp = Date.now();
+          if (latestIntentionText && domain) {
             void sendMessage({
               type: "timer_expired",
               payload: {
                 domain,
-                timestamp: Date.now(),
+                timestamp,
                 minutes
               }
+            });
+          }
+          if (domain) {
+            void sendMessage({
+              type: "overlay_shown",
+              payload: { domain, timestamp }
             });
           }
           const gateRoot = createOverlay({
@@ -1204,13 +1220,18 @@ export async function mountOverlay(): Promise<void> {
       existingIntention.timerEndsAt &&
       existingIntention.timerEndsAt <= Date.now()
     ) {
+      const timestamp = Date.now();
       void sendMessage({
         type: "timer_expired",
         payload: {
           domain: hostname,
-          timestamp: Date.now(),
+          timestamp,
           minutes: existingIntention.timerMinutes
         }
+      });
+      void sendMessage({
+        type: "overlay_shown",
+        payload: { domain: hostname, timestamp }
       });
       lockScroll();
       document.documentElement.appendChild(
