@@ -11,9 +11,6 @@ const MIN_INTENTION_LENGTH = 5;
 const PILL_POSITION_KEY = "waih_pill_position";
 let activeOverlayInput: HTMLInputElement | null = null;
 const overlayEditableElements = new Set<HTMLElement>();
-let activeMathConfirm: (() => void) | null = null;
-let mathGateActive = false;
-let mathGateArmed = false;
 
 type ActiveIntention = {
   domain: string;
@@ -185,18 +182,6 @@ function isOverlayEditableEvent(event: KeyboardEvent): boolean {
 }
 
 function handleOverlayKeyEvent(event: KeyboardEvent): void {
-  if (
-    event.key === "Enter" &&
-    mathGateActive &&
-    mathGateArmed &&
-    activeMathConfirm &&
-    !isOverlayEditableEvent(event)
-  ) {
-    event.preventDefault();
-    event.stopPropagation();
-    activeMathConfirm();
-    return;
-  }
   if (isOverlayEditableEvent(event)) {
     if (event.key !== "Enter") {
       event.stopPropagation();
@@ -421,7 +406,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       flex: 0 0 auto;
       white-space: nowrap;
     }
-    .pill.is-typing button {
+    .pill.is-typing .intent-submit {
       opacity: 1;
       pointer-events: auto;
     }
@@ -448,48 +433,67 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     }
     .math-gate {
       position: absolute;
-      top: calc(100% + 0.9rem);
+      top: calc(100% + 0.75rem);
       left: 50%;
       transform: translateX(-50%);
       display: none;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.78);
-      color: rgba(23, 26, 29, 0.85);
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.26rem;
+      padding: 8px 10px 7px;
+      border-radius: 16px;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.9),
+        rgba(248, 249, 250, 0.82)
+      );
+      color: rgba(23, 26, 29, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
       font-size: 0.8rem;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
-      white-space: nowrap;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+      width: auto;
+      min-width: 280px;
+      max-width: min(440px, calc(100vw - 32px));
+    }
+    .math-gate.is-error {
+      border-color: rgba(214, 108, 108, 0.48);
+      box-shadow: 0 0 0 1px rgba(214, 108, 108, 0.22),
+        0 14px 30px rgba(0, 0, 0, 0.18);
     }
     .math-gate.is-visible {
-      display: inline-flex;
+      display: flex;
+    }
+    .math-gate .math-main {
+      display: grid;
+      grid-template-columns: auto minmax(86px, 1fr) auto;
+      align-items: center;
+      gap: 0.42rem;
+      min-width: 0;
     }
     .math-gate .math-question {
-      flex: 0 1 auto;
+      flex: 0 0 auto;
       white-space: nowrap;
+      color: rgba(23, 26, 29, 0.72);
+      font-size: 0.72rem;
+      font-weight: 500;
     }
     .math-gate .math-input {
-      flex: 0 0 auto;
-      box-sizing: content-box;
-      width: 8.5ch;
-      min-width: 8.5ch;
-      max-width: 10.5ch;
       border: none;
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.96);
       border-radius: 999px;
-      padding: 3px 8px;
-      font-size: 0.8rem;
+      padding: 4px 10px;
+      font-size: 0.75rem;
       text-align: center;
       outline: none;
-      color: rgba(23, 26, 29, 0.9);
+      color: rgba(23, 26, 29, 0.92);
       cursor: text;
       user-select: text;
       pointer-events: auto;
+      width: 100%;
+      min-width: 0;
     }
     .math-gate .math-input::placeholder {
-      color: rgba(23, 26, 29, 0.4);
+      color: rgba(23, 26, 29, 0.44);
     }
     .math-gate,
     .math-gate * {
@@ -498,17 +502,68 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     .math-gate .math-ok {
       flex: 0 0 auto;
       border: none;
-      background: rgba(23, 26, 29, 0.08);
-      color: rgba(23, 26, 29, 0.85);
-      font-size: 0.7rem;
+      background: transparent;
+      color: rgba(23, 26, 29, 0.62);
+      font-size: 0.79rem;
       font-weight: 600;
       cursor: pointer;
-      padding: 3px 10px;
+      padding: 0 4px;
+      border-radius: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .math-gate .math-close {
+      position: absolute;
+      top: -7px;
+      left: -7px;
+      width: 18px;
+      height: 18px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: linear-gradient(
+        180deg,
+        rgba(250, 250, 250, 0.98),
+        rgba(240, 242, 244, 0.95)
+      );
+      color: rgba(23, 26, 29, 0.66);
+      font-size: 0.64rem;
+      line-height: 1;
+      font-weight: 700;
+      cursor: pointer;
       border-radius: 999px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: none;
+      letter-spacing: 0;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 5px 12px rgba(0, 0, 0, 0.16);
+      transition: opacity 0.12s ease, color 0.12s ease, transform 0.12s ease;
+      transform: scale(0.92);
+    }
+    .math-gate:hover .math-close {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+    .math-gate .math-close:hover {
+      color: rgba(23, 26, 29, 0.84);
     }
     .math-gate .math-error {
+      position: absolute;
+      top: calc(100% + 0.32rem);
+      left: 50%;
+      transform: translateX(-50%);
+      display: block;
       color: rgba(214, 108, 108, 0.9);
-      font-size: 0.7rem;
+      font-size: 0.66rem;
+      min-height: 0.95em;
+      line-height: 1.1;
+      white-space: nowrap;
+      pointer-events: none;
     }
     .timebox-row {
       position: absolute;
@@ -616,6 +671,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
 
   const mathGate = document.createElement("div");
   mathGate.className = "math-gate";
+  const mathMain = document.createElement("div");
+  mathMain.className = "math-main";
   const mathQuestion = document.createElement("span");
   mathQuestion.className = "math-question";
   const mathInput = document.createElement("input");
@@ -630,10 +687,16 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   const mathOk = document.createElement("button");
   mathOk.className = "math-ok";
   mathOk.type = "button";
-  mathOk.textContent = "OK";
+  mathOk.textContent = "Enter";
+  const mathClose = document.createElement("button");
+  mathClose.className = "math-close";
+  mathClose.type = "button";
+  mathClose.textContent = "x";
+  mathClose.setAttribute("aria-label", "Back to editing");
   const mathError = document.createElement("span");
   mathError.className = "math-error";
-  mathGate.append(mathQuestion, mathInput, mathOk, mathError);
+  mathMain.append(mathQuestion, mathInput, mathOk, mathClose);
+  mathGate.append(mathMain, mathError);
 
   const sizer = document.createElement("span");
   sizer.className = "sizer";
@@ -849,6 +912,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
   let selectedMinutes: number | null = null;
   let mathGateVisible = false;
   let currentMathAnswer = 0;
+  let pendingIntention: string | null = null;
+  let pendingMinutes: number | null = null;
 
   const generateMathChallenge = (): string => {
     const a = Math.floor(Math.random() * 100) + 1;
@@ -864,16 +929,24 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     return `Solve ${max} - ${min}`;
   };
 
-  const showMathGate = (): void => {
-    if (!mathGateVisible) {
-      mathQuestion.textContent = generateMathChallenge();
-    }
+  const clearMathError = (): void => {
+    mathError.textContent = "";
+    mathGate.classList.remove("is-error");
+  };
+
+  const showMathError = (message: string): void => {
+    mathError.textContent = message;
+    mathGate.classList.add("is-error");
+  };
+
+  const showMathGate = (intention: string, minutes: number | null): void => {
+    pendingIntention = intention;
+    pendingMinutes = minutes;
+    mathQuestion.textContent = generateMathChallenge();
     mathGateVisible = true;
-    mathGateActive = true;
-    mathGateArmed = false;
     mathGate.classList.add("is-visible");
     mathInput.value = "";
-    mathError.textContent = "";
+    clearMathError();
     activeOverlayInput = mathInput;
     input.readOnly = true;
     input.setAttribute("aria-readonly", "true");
@@ -882,21 +955,20 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     updateTypingState();
     mathInput.focus();
     window.requestAnimationFrame(() => mathInput.focus());
-    window.requestAnimationFrame(() => {
-      mathGateArmed = true;
-    });
   };
 
-  const hideMathGate = (): void => {
+  const hideMathGate = (preservePending = false): void => {
     mathGateVisible = false;
-    mathGateActive = false;
-    mathGateArmed = false;
     mathGate.classList.remove("is-visible");
-    mathError.textContent = "";
+    clearMathError();
     activeOverlayInput = input;
     input.readOnly = false;
     input.removeAttribute("aria-readonly");
     pill.classList.remove("is-locked");
+    if (!preservePending) {
+      pendingIntention = null;
+      pendingMinutes = null;
+    }
   };
 
   const syncMinutes = (): void => {
@@ -1066,6 +1138,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
         timerMinutes: minutes,
         timerEndsAt: endsAt
       };
+      pendingIntention = null;
+      pendingMinutes = null;
 
       setActiveIntention(activeIntention);
 
@@ -1105,18 +1179,13 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     };
 
     const attemptSubmit = (): void => {
-      hideMathGate();
-
       const intention = getValidatedIntention();
       if (!intention) return;
 
-      const minutes = Number(form.dataset.timerMinutes || 0);
-      if (minutes === 0) {
-        showMathGate();
-        return;
-      }
-
-      finalizeSubmission(intention, minutes);
+      const rawMinutes = Number(form.dataset.timerMinutes || 0);
+      const minutes =
+        Number.isFinite(rawMinutes) && rawMinutes > 0 ? rawMinutes : null;
+      showMathGate(intention, minutes);
     };
 
     form.addEventListener("submit", (event) => {
@@ -1125,47 +1194,54 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     });
 
     const handleMathConfirm = (): void => {
-      const intention = getValidatedIntention();
-      if (!intention) return;
+      if (!mathGateVisible || !pendingIntention) return;
       if (!mathInput.value.trim()) {
-        mathError.textContent = "";
+        showMathError("Enter a number.");
         mathInput.focus();
         return;
       }
       const answer = Number(mathInput.value.trim());
       if (!Number.isFinite(answer) || answer !== currentMathAnswer) {
-        mathError.textContent = "Try again.";
+        showMathError("Incorrect answer. Try again.");
         mathInput.focus();
         return;
       }
+
+      const effectiveMinutes =
+        pendingMinutes != null && pendingMinutes > 0 ? pendingMinutes : 1;
+      const intentionToSubmit = pendingIntention;
+
       hideMathGate();
-      input.readOnly = false;
-      input.removeAttribute("aria-readonly");
-      pill.classList.remove("is-locked");
-      form.dataset.timerMinutes = "1";
-      finalizeSubmission(intention, 1);
+      form.dataset.timerMinutes = String(effectiveMinutes);
+      finalizeSubmission(intentionToSubmit, effectiveMinutes);
     };
 
-    activeMathConfirm = handleMathConfirm;
+    const handleMathBack = (): void => {
+      if (!mathGateVisible) return;
+      hideMathGate();
+      mathInput.value = "";
+      clearMathError();
+      activeOverlayInput = input;
+      focusOverlayInput();
+      window.requestAnimationFrame(focusOverlayInput);
+      updateTypingState();
+      updateSizing();
+    };
 
     mathInput.addEventListener("input", () => {
       const digitsOnly = mathInput.value.replace(/\D/g, "");
       if (mathInput.value !== digitsOnly) {
         mathInput.value = digitsOnly;
       }
-      mathError.textContent = "";
+      clearMathError();
     });
 
+    mathClose.addEventListener("click", handleMathBack);
     mathOk.addEventListener("click", handleMathConfirm);
     mathInput.addEventListener("keydown", (event) => {
       if (event.key !== "Enter") return;
       event.preventDefault();
-      handleMathConfirm();
-    });
-
-    mathInput.addEventListener("keyup", (event) => {
-      if (event.key !== "Enter") return;
-      event.preventDefault();
+      event.stopPropagation();
       handleMathConfirm();
     });
   } else {
