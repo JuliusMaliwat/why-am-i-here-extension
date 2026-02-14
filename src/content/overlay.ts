@@ -388,7 +388,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     .intention-input::placeholder {
       color: rgba(23, 26, 29, 0.42);
     }
-    button {
+    .intent-submit {
       background: transparent;
       color: rgba(23, 26, 29, 0.6);
       border: none;
@@ -401,8 +401,6 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.15s ease;
-    }
-    .intent-submit {
       flex: 0 0 auto;
       white-space: nowrap;
     }
@@ -451,9 +449,9 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       border: 1px solid rgba(0, 0, 0, 0.1);
       font-size: 0.8rem;
       box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
-      width: auto;
-      min-width: 280px;
-      max-width: min(440px, calc(100vw - 32px));
+      width: max-content;
+      min-width: 0;
+      max-width: min(360px, calc(100vw - 32px));
     }
     .math-gate.is-error {
       border-color: rgba(214, 108, 108, 0.48);
@@ -465,7 +463,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
     }
     .math-gate .math-main {
       display: grid;
-      grid-template-columns: auto minmax(86px, 1fr) auto;
+      grid-template-columns: auto auto auto;
       align-items: center;
       gap: 0.42rem;
       min-width: 0;
@@ -489,8 +487,9 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       cursor: text;
       user-select: text;
       pointer-events: auto;
-      width: 100%;
-      min-width: 0;
+      width: 12ch;
+      min-width: 12ch;
+      max-width: 14ch;
     }
     .math-gate .math-input::placeholder {
       color: rgba(23, 26, 29, 0.44);
@@ -594,6 +593,8 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       padding: 0.35em 0.9em;
       border-radius: 999px;
       cursor: pointer;
+      opacity: 1;
+      pointer-events: auto;
       transition: background 0.15s ease, color 0.15s ease;
     }
     .timebox-chip.is-selected {
@@ -607,7 +608,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 6.5ch;
+      min-width: 6.9ch;
     }
     .timebox-custom .custom-label {
       letter-spacing: 0.06em;
@@ -636,7 +637,7 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       font-size: 0.75rem;
       text-align: right;
       outline: none;
-      width: 2ch;
+      width: 2.8ch;
     }
     .timebox-custom .custom-suffix {
       font-size: 0.7rem;
@@ -1222,6 +1223,11 @@ function createOverlay(init: OverlayInit): HTMLDivElement {
       mathInput.value = "";
       clearMathError();
       activeOverlayInput = input;
+      if (input.value.trim().length > 0) {
+        timeboxRow.classList.add("is-visible");
+      } else {
+        timeboxRow.classList.remove("is-visible");
+      }
       focusOverlayInput();
       window.requestAnimationFrame(focusOverlayInput);
       updateTypingState();
