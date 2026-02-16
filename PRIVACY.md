@@ -1,4 +1,4 @@
-# Privacy Policy — why am i here
+# Privacy Policy - why am i here
 
 Last updated: 2026-02-16
 
